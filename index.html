@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quran App - Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .quran-font { font-family: 'Amiri', serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-2xl font-bold">Assalamu'alaikum</h1>
+      <p class="text-blue-100 mt-1">Siap untuk membaca hari ini?</p>
+      
+      <!-- Last Read Card -->
+      <div id="last-read-card" class="mt-6 bg-white/20 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between border border-white/30 hidden">
+        <div class="flex items-center gap-4">
+          <span class="material-icons text-3xl text-yellow-300">menu_book</span>
+          <div>
+            <p class="text-xs text-blue-100 uppercase tracking-wider font-semibold">Terakhir Dibaca</p>
+            <h3 id="last-read-info" class="text-lg font-bold">Halaman 1</h3>
+          </div>
+        </div>
+        <button onclick="goToLastRead()" class="bg-white text-blue-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50">Lanjut</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 pb-24">
+    <!-- Quick Access / Options -->
+    <section class="mt-4">
+      <h2 class="font-bold text-gray-800 mb-3">Akses Cepat</h2>
+      <div class="grid grid-cols-4 gap-3">
+        <div class="flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
+          <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+            <span class="material-icons">list_alt</span>
+          </div>
+          <span class="text-[10px] font-bold">Surah</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center cursor-pointer">
+            <span class="material-icons">auto_stories</span>
+          </div>
+          <span class="text-[10px] font-bold">Juz</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center cursor-pointer">
+            <span class="material-icons">bookmark</span>
+          </div>
+          <span class="text-[10px] font-bold">Page</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center cursor-pointer">
+            <span class="material-icons">grid_view</span>
+          </div>
+          <span class="text-[10px] font-bold">Hizib</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Surah List -->
+    <section class="mt-8">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-gray-800 text-lg">Daftar Surah</h2>
+        <span class="text-xs text-blue-600 font-semibold" id="surah-count">114 Surah</span>
+      </div>
+      
+      <div id="surah-list-container" class="space-y-3">
+        <!-- Skeleton Loading -->
+        <div class="animate-pulse bg-gray-200 h-16 rounded-xl"></div>
+        <div class="animate-pulse bg-gray-200 h-16 rounded-xl"></div>
+        <div class="animate-pulse bg-gray-200 h-16 rounded-xl"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const container = document.getElementById('surah-list-container');
+
+    // Cek Last Read dari LocalStorage
+    function checkLastRead() {
+      const lastPage = localStorage.getItem('lastReadPage');
+      if (lastPage) {
+        document.getElementById('last-read-card').classList.remove('hidden');
+        document.getElementById('last-read-info').textContent = `Halaman ${lastPage}`;
+      }
+    }
+
+    function goToLastRead() {
+      const lastPage = localStorage.getItem('lastReadPage') || 1;
+      window.location.href = `reader.html?page=${lastPage}`; // Asumsi file bacaanmu bernama reader.html
+    }
+
+    async function fetchSurah() {
+      try {
+        const res = await fetch('https://api.alquran.cloud/v1/surah');
+        const data = await res.json();
+        renderSurah(data.data);
+      } catch (err) {
+        container.innerHTML = `<p class="text-center text-red-500">Gagal memuat data.</p>`;
+      }
+    }
+
+    function renderSurah(surahs) {
+      container.innerHTML = '';
+      surahs.forEach(s => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-blue-300 transition-all cursor-pointer active:scale-95";
+        
+        // Cek Tipe Wahyu untuk Icon
+        const revelationIcon = s.revelationType === 'Meccan' ? '🕋' : '🕌';
+        
+        item.innerHTML = `
+          <div class="flex items-center gap-4">
+            <!-- No (2 baris) -->
+            <div class="relative flex items-center justify-center w-10 h-10">
+                <span class="material-icons text-blue-100 text-4xl">star</span>
+                <span class="absolute text-[10px] font-bold text-blue-700">${s.number}</span>
+            </div>
+            
+            <!-- Nama Surah Latin (1 baris) & Arti + Icon (1 baris) -->
+            <div>
+              <h4 class="font-bold text-gray-800 text-sm">${s.englishName}</h4>
+              <div class="flex items-center gap-1 text-[10px] text-gray-500 italic">
+                <span>${s.englishNameTranslation}</span>
+                <span>•</span>
+                <span>${revelationIcon} ${s.numberOfAyahs} Ayat</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nama Surah Arab (2 baris/besar) -->
+          <div class="text-right">
+            <div class="quran-font text-xl text-blue-600 font-bold leading-tight">${s.name}</div>
+          </div>
+        `;
+        
+        item.onclick = () => {
+           // Contoh: Arahkan ke halaman pertama surah tersebut
+           // Di API ini, kita butuh fetch lagi untuk tahu surah ini ada di page berapa, 
+           // atau sementara arahkan ke page logic sederhana.
+           alert(`Membuka Surah ${s.englishName}`);
+        };
+        
+        container.appendChild(item);
+      });
+    }
+
+    // Jalankan fungsi
+    checkLastRead();
+    fetchSurah();
+  </script>
+</body>
+</html>
