@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quran Per Page</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Font Quran -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Amiri', serif; }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center p-2 sm:p-6 min-h-screen">
+
+  <div class="w-full max-w-2xl sm:max-w-3xl bg-white shadow-lg rounded-lg p-3 sm:p-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-center mb-4">القرآن الكريم</h1>
+    
+    <!-- Kontainer ayat -->
+    <div id="quran-page" dir="rtl" class="text-justify text-lg sm:text-2xl leading-relaxed min-h-96 p-2 sm:p-0 touch-auto select-text" style="line-height: 2.5;"></div>
+
+    <!-- Navigasi di tengah -->
+    <div class="flex justify-center mt-6 gap-3 sm:gap-6 flex-wrap items-center flex-row-reverse">
+      <button id="prev" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
+        <span class="material-icons">chevron_right</span>
+      </button>
+      <div class="text-center text-sm sm:text-base">
+        <span id="page-number">1</span> / <span>604</span>
+      </div>
+      <button id="next" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
+        <span class="material-icons">chevron_left</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+
+    // Fungsi konversi angka biasa ke angka Arab
+    function toArabicNumber(num) {
+      const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+      return String(num).split('').map(d => arabicDigits[d]).join('');
+    }
+
+    async function loadPage(page) {
+      const res = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
+      const data = await res.json();
+      const ayahs = data.data.ayahs;
+
+      let pageText = "";
+      ayahs.forEach(ayah => {
+        pageText += ayah.text + " ﴿" + toArabicNumber(ayah.numberInSurah) + "﴾";
+      });
+
+      document.getElementById("quran-page").textContent = pageText;
+      document.getElementById("page-number").textContent = page;
+    }
+
+    document.getElementById("prev").addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadPage(currentPage);
+      }
+    });
+
+    document.getElementById("next").addEventListener("click", () => {
+      if (currentPage < 604) {
+        currentPage++;
+        loadPage(currentPage);
+      }
+    });
+
+    // Swipe gesture untuk mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    const pageContainer = document.getElementById("quran-page");
+    
+    pageContainer.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    pageContainer.addEventListener("touchend", (e) => {
+      touchEndX = e.changedTouches[0].clientX;
+      touchEndY = e.changedTouches[0].clientY;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      const swipeThreshold = 50;
+      const diffX = touchStartX - touchEndX;
+      const diffY = Math.abs(touchStartY - touchEndY);
+
+      // Only register horizontal swipes, not vertical scrolls
+      if (Math.abs(diffX) > swipeThreshold && diffY < swipeThreshold) {
+        if (diffX < 0) {
+          // Swipe right in RTL = next page
+          if (currentPage < 604) {
+            currentPage++;
+            loadPage(currentPage);
+          }
+        } else {
+          // Swipe left in RTL = prev page
+          if (currentPage > 1) {
+            currentPage--;
+            loadPage(currentPage);
+          }
+        }
+      }
+    }
+
+    // Keyboard navigation
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        if (currentPage < 604) {
+          currentPage++;
+          loadPage(currentPage);
+        }
+      } else if (e.key === "ArrowRight") {
+        if (currentPage > 1) {
+          currentPage--;
+          loadPage(currentPage);
+        }
+      }
+    });
+
+    // Load halaman pertama
+    loadPage(currentPage);
+  </script>
+</body>
+</html>
