@@ -96,7 +96,14 @@
 
     function goToLastRead() {
       const lastPage = localStorage.getItem('lastReadPage') || 1;
-      window.location.href = `reader.html?page=${lastPage}`; // Asumsi file bacaanmu bernama reader.html
+      window.location.href = `page.html?page=${lastPage}`;
+    }
+
+    // Ambil parameter page dari URL jika ada
+    function getPageFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get('page');
+      return page ? parseInt(page) : null;
     }
 
     async function fetchSurah() {
@@ -143,11 +150,22 @@
           </div>
         `;
         
-        item.onclick = () => {
-           // Contoh: Arahkan ke halaman pertama surah tersebut
-           // Di API ini, kita butuh fetch lagi untuk tahu surah ini ada di page berapa, 
-           // atau sementara arahkan ke page logic sederhana.
-           alert(`Membuka Surah ${s.englishName}`);
+        item.onclick = async () => {
+           // Fetch data surah untuk mendapatkan nomor halaman pertama
+           try {
+             const res = await fetch(`https://api.alquran.cloud/v1/surah/${s.number}`);
+             const data = await res.json();
+             if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
+               const firstPage = data.data.ayahs[0].page;
+               // Simpan ke localStorage dan arahkan ke page.html
+               localStorage.setItem('lastReadPage', firstPage);
+               window.location.href = `page.html?page=${firstPage}`;
+             } else {
+               alert(`Gagal memuat data Surah ${s.englishName}`);
+             }
+           } catch (err) {
+             alert(`Terjadi kesalahan saat membuka Surah ${s.englishName}`);
+           }
         };
         
         container.appendChild(item);
