@@ -17,8 +17,7 @@
   <!-- Header -->
   <header class="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg">
     <div class="max-w-md mx-auto">
-      <h1 class="text-2xl font-bold">Assalamu'alaikum</h1>
-      <p class="text-blue-100 mt-1">Siap untuk membaca hari ini?</p>
+      <h1 class="text-2xl font-bold">Al-Quran Al-Karim</h1>
       
       <!-- Last Read Card -->
       <div id="last-read-card" class="mt-6 bg-white/20 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between border border-white/30 hidden">
@@ -38,30 +37,44 @@
     <!-- Quick Access / Options -->
     <section class="mt-4">
       <h2 class="font-bold text-gray-800 mb-3">Akses Cepat</h2>
-      <div class="grid grid-cols-4 gap-3">
-        <div class="flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
-          <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-            <span class="material-icons">list_alt</span>
+      <div class="grid grid-cols-5 gap-2">
+        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openQuickSurah()">
+          <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+            <span class="material-icons text-sm">list_alt</span>
           </div>
-          <span class="text-[10px] font-bold">Surah</span>
+          <span class="text-[9px] font-bold text-center">Surah</span>
         </div>
-        <div class="flex flex-col items-center gap-1">
-          <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center cursor-pointer">
-            <span class="material-icons">auto_stories</span>
+        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openJuz()">
+          <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+            <span class="material-icons text-sm">auto_stories</span>
           </div>
-          <span class="text-[10px] font-bold">Juz</span>
+          <span class="text-[9px] font-bold text-center">Juz</span>
         </div>
-        <div class="flex flex-col items-center gap-1">
-          <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center cursor-pointer">
-            <span class="material-icons">bookmark</span>
+        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openPage()">
+          <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+            <span class="material-icons text-sm">bookmark</span>
           </div>
-          <span class="text-[10px] font-bold">Page</span>
+          <span class="text-[9px] font-bold text-center">Page</span>
         </div>
-        <div class="flex flex-col items-center gap-1">
-          <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center cursor-pointer">
-            <span class="material-icons">grid_view</span>
+        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openHizb()">
+          <div class="w-10 h-10 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center">
+            <span class="material-icons text-sm">grid_view</span>
           </div>
-          <span class="text-[10px] font-bold">Hizib</span>
+          <span class="text-[9px] font-bold text-center">Hizib</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openRuku()">
+          <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
+            <span class="material-icons text-sm">view_column</span>
+          </div>
+          <span class="text-[9px] font-bold text-center">Ruku</span>
+        </div>
+      </div>
+      
+      <!-- Surah Favorit Section -->
+      <div class="mt-4">
+        <h3 class="font-bold text-gray-700 text-sm mb-2">Surah Pilihan</h3>
+        <div id="favorite-surahs" class="flex flex-wrap gap-2">
+          <!-- Akan diisi oleh JavaScript -->
         </div>
       </div>
     </section>
@@ -84,6 +97,16 @@
 
   <script>
     const container = document.getElementById('surah-list-container');
+    const favoriteSurahsContainer = document.getElementById('favorite-surahs');
+    
+    // Daftar surah pilihan dengan nomor surah
+    const favoriteSurahs = [
+      { number: 18, name: 'Al-Kahfi' },
+      { number: 36, name: 'Yasin' },
+      { number: 55, name: 'Ar-Rahman' },
+      { number: 56, name: 'Al-Waqiah' },
+      { number: 67, name: 'Al-Mulk' }
+    ];
 
     // Cek Last Read dari LocalStorage
     function checkLastRead() {
@@ -96,14 +119,126 @@
 
     function goToLastRead() {
       const lastPage = localStorage.getItem('lastReadPage') || 1;
-      window.location.href = `page.html?page=${lastPage}`;
+      window.location.href = `read.html?page=${lastPage}`;
     }
 
-    // Ambil parameter page dari URL jika ada
-    function getPageFromURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get('page');
-      return page ? parseInt(page) : null;
+    // Fungsi untuk membuka surah tertentu
+    async function openSurahByNumber(surahNumber) {
+      try {
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
+        const data = await res.json();
+        if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
+          const firstPage = data.data.ayahs[0].page;
+          localStorage.setItem('lastReadPage', firstPage);
+          window.location.href = `read.html?page=${firstPage}`;
+        }
+      } catch (err) {
+        alert(`Terjadi kesalahan saat membuka surah`);
+      }
+    }
+
+    // Render surah pilihan
+    function renderFavoriteSurahs() {
+      favoriteSurahsContainer.innerHTML = '';
+      favoriteSurahs.forEach(surah => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition active:scale-95';
+        btn.textContent = surah.name;
+        btn.onclick = () => openSurahByNumber(surah.number);
+        favoriteSurahsContainer.appendChild(btn);
+      });
+    }
+
+    // Fungsi untuk navigasi cepat (akan diimplementasikan dengan modal/prompt)
+    function openQuickSurah() {
+      const surahNumber = prompt('Masukkan nomor surah (1-114):');
+      if (surahNumber && !isNaN(surahNumber) && surahNumber >= 1 && surahNumber <= 114) {
+        openSurahByNumber(parseInt(surahNumber));
+      } else if (surahNumber) {
+        alert('Nomor surah tidak valid. Masukkan angka 1-114.');
+      }
+    }
+
+    function openJuz() {
+      const juzNumber = prompt('Masukkan nomor juz (1-30):');
+      if (juzNumber && !isNaN(juzNumber) && juzNumber >= 1 && juzNumber <= 30) {
+        loadJuz(parseInt(juzNumber));
+      } else if (juzNumber) {
+        alert('Nomor juz tidak valid. Masukkan angka 1-30.');
+      }
+    }
+
+    function openPage() {
+      const pageNum = prompt('Masukkan nomor halaman (1-604):');
+      if (pageNum && !isNaN(pageNum) && pageNum >= 1 && pageNum <= 604) {
+        localStorage.setItem('lastReadPage', pageNum);
+        window.location.href = `read.html?page=${pageNum}`;
+      } else if (pageNum) {
+        alert('Nomor halaman tidak valid. Masukkan angka 1-604.');
+      }
+    }
+
+    function openHizb() {
+      const hizbNumber = prompt('Masukkan nomor Hizb Quarter (1-240):');
+      if (hizbNumber && !isNaN(hizbNumber) && hizbNumber >= 1 && hizbNumber <= 240) {
+        loadHizb(parseInt(hizbNumber));
+      } else if (hizbNumber) {
+        alert('Nomor Hizb Quarter tidak valid. Masukkan angka 1-240.');
+      }
+    }
+
+    function openRuku() {
+      const rukuNumber = prompt('Masukkan nomor Ruku (1-556):');
+      if (rukuNumber && !isNaN(rukuNumber) && rukuNumber >= 1 && rukuNumber <= 556) {
+        loadRuku(parseInt(rukuNumber));
+      } else if (rukuNumber) {
+        alert('Nomor Ruku tidak valid. Masukkan angka 1-556.');
+      }
+    }
+
+    // Load Juz
+    async function loadJuz(juzNumber) {
+      try {
+        const res = await fetch(`https://api.alquran.cloud/v1/juz/${juzNumber}/quran-uthmani`);
+        const data = await res.json();
+        if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
+          const firstPage = data.data.ayahs[0].page;
+          localStorage.setItem('lastReadPage', firstPage);
+          window.location.href = `read.html?page=${firstPage}`;
+        }
+      } catch (err) {
+        alert('Gagal memuat data Juz');
+      }
+    }
+
+    // Load Hizb Quarter
+    async function loadHizb(hizbNumber) {
+      try {
+        const res = await fetch(`https://api.alquran.cloud/v1/hizbQuarter/${hizbNumber}/quran-uthmani`);
+        const data = await res.json();
+        if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
+          const firstPage = data.data.ayahs[0].page;
+          localStorage.setItem('lastReadPage', firstPage);
+          window.location.href = `read.html?page=${firstPage}`;
+        }
+      } catch (err) {
+        alert('Gagal memuat data Hizb');
+      }
+    }
+
+    // Load Ruku
+    async function loadRuku(rukuNumber) {
+      try {
+        const res = await fetch(`https://api.alquran.cloud/v1/ruku/${rukuNumber}/quran-uthmani`);
+        const data = await res.json();
+        if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
+          const firstPage = data.data.ayahs[0].page;
+          localStorage.setItem('lastReadPage', firstPage);
+          window.location.href = `read.html?page=${firstPage}`;
+        }
+      } catch (err) {
+        alert('Gagal memuat data Ruku');
+      }
     }
 
     async function fetchSurah() {
@@ -157,9 +292,9 @@
              const data = await res.json();
              if (data.code === 200 && data.data.ayahs && data.data.ayahs.length > 0) {
                const firstPage = data.data.ayahs[0].page;
-               // Simpan ke localStorage dan arahkan ke page.html
+               // Simpan ke localStorage dan arahkan ke read.html
                localStorage.setItem('lastReadPage', firstPage);
-               window.location.href = `page.html?page=${firstPage}`;
+               window.location.href = `read.html?page=${firstPage}`;
              } else {
                alert(`Gagal memuat data Surah ${s.englishName}`);
              }
@@ -174,6 +309,7 @@
 
     // Jalankan fungsi
     checkLastRead();
+    renderFavoriteSurahs();
     fetchSurah();
   </script>
 </body>

@@ -71,7 +71,7 @@
         currentPage--;
         loadPage(currentPage);
         // Update URL tanpa reload
-        window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+        window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
       }
     });
 
@@ -80,7 +80,7 @@
         currentPage++;
         loadPage(currentPage);
         // Update URL tanpa reload
-        window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+        window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
       }
     });
 
@@ -115,14 +115,14 @@
           if (currentPage < 604) {
             currentPage++;
             loadPage(currentPage);
-            window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+            window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
           }
         } else {
           // Swipe left in RTL = prev page
           if (currentPage > 1) {
             currentPage--;
             loadPage(currentPage);
-            window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+            window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
           }
         }
       }
@@ -134,13 +134,13 @@
         if (currentPage < 604) {
           currentPage++;
           loadPage(currentPage);
-          window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+          window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
         }
       } else if (e.key === "ArrowRight") {
         if (currentPage > 1) {
           currentPage--;
           loadPage(currentPage);
-          window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
+          window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
         }
       }
     });
