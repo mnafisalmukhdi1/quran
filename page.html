@@ -37,7 +37,14 @@
   </div>
 
   <script>
-    let currentPage = 1;
+    // Ambil parameter page dari URL
+    function getPageFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get('page');
+      return page ? parseInt(page) : 1;
+    }
+
+    let currentPage = getPageFromURL();
 
     // Fungsi konversi angka biasa ke angka Arab
     function toArabicNumber(num) {
@@ -63,6 +70,8 @@
       if (currentPage > 1) {
         currentPage--;
         loadPage(currentPage);
+        // Update URL tanpa reload
+        window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
       }
     });
 
@@ -70,6 +79,8 @@
       if (currentPage < 604) {
         currentPage++;
         loadPage(currentPage);
+        // Update URL tanpa reload
+        window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
       }
     });
 
@@ -104,12 +115,14 @@
           if (currentPage < 604) {
             currentPage++;
             loadPage(currentPage);
+            window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
           }
         } else {
           // Swipe left in RTL = prev page
           if (currentPage > 1) {
             currentPage--;
             loadPage(currentPage);
+            window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
           }
         }
       }
@@ -121,11 +134,13 @@
         if (currentPage < 604) {
           currentPage++;
           loadPage(currentPage);
+          window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
         }
       } else if (e.key === "ArrowRight") {
         if (currentPage > 1) {
           currentPage--;
           loadPage(currentPage);
+          window.history.pushState({ page: currentPage }, '', `page.html?page=${currentPage}`);
         }
       }
     });
