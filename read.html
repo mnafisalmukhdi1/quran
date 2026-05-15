@@ -1,152 +1,345 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quran Per Page</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Font Quran -->
-  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Amiri', serif; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Quran Al-Karim</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .surah-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .surah-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+        }
+        .modal-body {
+            padding: 1rem;
+        }
+        .modal-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .modal-item:last-child {
+            border-bottom: none;
+        }
+        .modal-item:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center p-2 sm:p-6 min-h-screen">
+<body class="bg-gray-50 min-h-screen" x-data="appData()">
+    <!-- Header -->
+    <header class="bg-green-700 text-white py-6 shadow-md">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-3xl font-bold">Al-Quran Al-Karim</h1>
+        </div>
+    </header>
 
-  <div class="w-full max-w-2xl sm:max-w-3xl bg-white shadow-lg rounded-lg p-3 sm:p-6">
-    <h1 class="text-xl sm:text-2xl font-bold text-center mb-4">القرآن الكريم</h1>
-    
-    <!-- Kontainer ayat -->
-    <div id="quran-page" dir="rtl" class="text-justify text-lg sm:text-2xl leading-relaxed min-h-96 p-2 sm:p-0 touch-auto select-text" style="line-height: 2.5;"></div>
+    <!-- Quick Access Buttons -->
+    <div class="container mx-auto px-4 mt-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <button @click="openModal('surah')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow">
+                <i class="fas fa-book-open mr-2"></i>Surah
+            </button>
+            <button @click="openModal('juz')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg shadow">
+                <i class="fas fa-layer-group mr-2"></i>Juz
+            </button>
+            <button @click="openModal('page')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg shadow">
+                <i class="fas fa-file-alt mr-2"></i>Page
+            </button>
+            <button @click="openModal('hizib')" class="bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-lg shadow">
+                <i class="fas fa-list mr-2"></i>Hizib
+            </button>
+            <button @click="openModal('ruku')" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg shadow">
+                <i class="fas fa-step-forward mr-2"></i>Ruku
+            </button>
+        </div>
 
-    <!-- Navigasi di tengah -->
-    <div class="flex justify-center mt-6 gap-3 sm:gap-6 flex-wrap items-center flex-row-reverse">
-      <button id="prev" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
-        <span class="material-icons">chevron_right</span>
-      </button>
-      <div class="text-center text-sm sm:text-base">
-        <span id="page-number">1</span> / <span>604</span>
-      </div>
-      <button id="next" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
-        <span class="material-icons">chevron_left</span>
-      </button>
+        <!-- Favorite Surahs -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Surah Pilihan</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <button @click="goToSurah(18)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
+                    Al-Kahfi
+                </button>
+                <button @click="goToSurah(36)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
+                    Yasin
+                </button>
+                <button @click="goToSurah(55)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
+                    Ar-Rahman
+                </button>
+                <button @click="goToSurah(56)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
+                    Al-Waqiah
+                </button>
+                <button @click="goToSurah(67)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
+                    Al-Mulk
+                </button>
+            </div>
+        </div>
+
+        <!-- Surah List -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Daftar Surah</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <template x-for="surah in surahList" :key="surah.number">
+                    <div 
+                        class="surah-card bg-white rounded-lg shadow-md p-4 cursor-pointer hover:bg-green-50"
+                        @click="goToSurah(surah.number)"
+                    >
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-800 flex items-center justify-center mr-3 font-bold">
+                                <span x-text="surah.number"></span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-arabic text-lg" dir="rtl" x-text="surah.name"></div>
+                                <div class="text-sm text-gray-600" x-text="surah.englishName + ' (' + surah.numberOfAyahs + ' Ayat)'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Ambil parameter page dari URL
-    function getPageFromURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get('page');
-      return page ? parseInt(page) : 1;
-    }
+    <!-- Modals -->
+    <div id="surahModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Pilih Surah</div>
+            <div class="modal-body">
+                <template x-for="surah in surahList" :key="surah.number">
+                    <div class="modal-item" @click="selectSurah(surah.number); closeModal('surah')">
+                        <span x-text="surah.number"></span>. <span x-text="surah.englishName"></span> (<span x-text="surah.numberOfAyahs"></span> ayat)
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
 
-    let currentPage = getPageFromURL();
+    <div id="juzModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Pilih Juz</div>
+            <div class="modal-body">
+                <template x-for="i in 30" :key="i">
+                    <div class="modal-item" @click="goToJuz(i); closeModal('juz')">Juz <span x-text="i"></span></div>
+                </template>
+            </div>
+        </div>
+    </div>
 
-    // Fungsi konversi angka biasa ke angka Arab
-    function toArabicNumber(num) {
-      const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-      return String(num).split('').map(d => arabicDigits[d]).join('');
-    }
+    <div id="pageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Pilih Halaman</div>
+            <div class="modal-body">
+                <template x-for="i in 604" :key="i">
+                    <div class="modal-item" @click="goToPage(i); closeModal('page')">Halaman <span x-text="i"></span></div>
+                </template>
+            </div>
+        </div>
+    </div>
 
-    async function loadPage(page) {
-      const res = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
-      const data = await res.json();
-      const ayahs = data.data.ayahs;
+    <div id="hizibModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Pilih Hizib</div>
+            <div class="modal-body">
+                <template x-for="i in 60" :key="i">
+                    <div class="modal-item" @click="goToHizib(i); closeModal('hizib')">Hizib <span x-text="i"></span></div>
+                </template>
+            </div>
+        </div>
+    </div>
 
-      let pageText = "";
-      ayahs.forEach(ayah => {
-        pageText += ayah.text + " ﴿" + toArabicNumber(ayah.numberInSurah) + "﴾";
-      });
+    <div id="rukuModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Pilih Ruku</div>
+            <div class="modal-body">
+                <template x-for="i in 558" :key="i">
+                    <div class="modal-item" @click="goToRuku(i); closeModal('ruku')">Ruku <span x-text="i"></span></div>
+                </template>
+            </div>
+        </div>
+    </div>
 
-      document.getElementById("quran-page").textContent = pageText;
-      document.getElementById("page-number").textContent = page;
-    }
-
-    document.getElementById("prev").addEventListener("click", () => {
-      if (currentPage > 1) {
-        currentPage--;
-        loadPage(currentPage);
-        // Update URL tanpa reload
-        window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-      }
-    });
-
-    document.getElementById("next").addEventListener("click", () => {
-      if (currentPage < 604) {
-        currentPage++;
-        loadPage(currentPage);
-        // Update URL tanpa reload
-        window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-      }
-    });
-
-    // Swipe gesture untuk mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-
-    const pageContainer = document.getElementById("quran-page");
-    
-    pageContainer.addEventListener("touchstart", (e) => {
-      touchStartX = e.changedTouches[0].clientX;
-      touchStartY = e.changedTouches[0].clientY;
-    }, { passive: true });
-
-    pageContainer.addEventListener("touchend", (e) => {
-      touchEndX = e.changedTouches[0].clientX;
-      touchEndY = e.changedTouches[0].clientY;
-      handleSwipe();
-    }, { passive: true });
-
-    function handleSwipe() {
-      const swipeThreshold = 50;
-      const diffX = touchStartX - touchEndX;
-      const diffY = Math.abs(touchStartY - touchEndY);
-
-      // Only register horizontal swipes, not vertical scrolls
-      if (Math.abs(diffX) > swipeThreshold && diffY < swipeThreshold) {
-        if (diffX < 0) {
-          // Swipe right in RTL = next page
-          if (currentPage < 604) {
-            currentPage++;
-            loadPage(currentPage);
-            window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-          }
-        } else {
-          // Swipe left in RTL = prev page
-          if (currentPage > 1) {
-            currentPage--;
-            loadPage(currentPage);
-            window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-          }
+    <script>
+        function appData() {
+            return {
+                surahList: [
+                    { number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah', numberOfAyahs: 7 },
+                    { number: 2, name: 'البقرة', englishName: 'Al-Baqarah', numberOfAyahs: 286 },
+                    { number: 3, name: 'آل عمران', englishName: 'Ali \'Imran', numberOfAyahs: 200 },
+                    { number: 4, name: 'النساء', englishName: 'An-Nisa', numberOfAyahs: 176 },
+                    { number: 5, name: 'المائدة', englishName: 'Al-Ma\'idah', numberOfAyahs: 120 },
+                    { number: 6, name: 'الأنعام', englishName: 'Al-An\'am', numberOfAyahs: 165 },
+                    { number: 7, name: 'الأعراف', englishName: 'Al-A\'raf', numberOfAyahs: 206 },
+                    { number: 8, name: 'الأنفال', englishName: 'Al-Anfal', numberOfAyahs: 75 },
+                    { number: 9, name: 'التوبة', englishName: 'At-Tawbah', numberOfAyahs: 129 },
+                    { number: 10, name: 'يونس', englishName: 'Yunus', numberOfAyahs: 109 },
+                    { number: 11, name: 'هود', englishName: 'Hud', numberOfAyahs: 123 },
+                    { number: 12, name: 'يوسف', englishName: 'Yusuf', numberOfAyahs: 111 },
+                    { number: 13, name: 'الرعد', englishName: 'Ar-Ra\'d', numberOfAyahs: 43 },
+                    { number: 14, name: 'إبراهيم', englishName: 'Ibrahim', numberOfAyahs: 52 },
+                    { number: 15, name: 'الحجر', englishName: 'Al-Hijr', numberOfAyahs: 99 },
+                    { number: 16, name: 'النحل', englishName: 'An-Nahl', numberOfAyahs: 128 },
+                    { number: 17, name: 'الإسراء', englishName: 'Al-Isra', numberOfAyahs: 111 },
+                    { number: 18, name: 'الكهف', englishName: 'Al-Kahf', numberOfAyahs: 110 },
+                    { number: 19, name: 'مريم', englishName: 'Maryam', numberOfAyahs: 98 },
+                    { number: 20, name: 'طه', englishName: 'Taha', numberOfAyahs: 135 },
+                    { number: 21, name: 'الأنبياء', englishName: 'Al-Anbiya', numberOfAyahs: 112 },
+                    { number: 22, name: 'الحج', englishName: 'Al-Hajj', numberOfAyahs: 78 },
+                    { number: 23, name: 'المؤمنون', englishName: 'Al-Mu\'minun', numberOfAyahs: 118 },
+                    { number: 24, name: 'النور', englishName: 'An-Nur', numberOfAyahs: 64 },
+                    { number: 25, name: 'الفرقان', englishName: 'Al-Furqan', numberOfAyahs: 77 },
+                    { number: 26, name: 'الشعراء', englishName: 'Ash-Shu\'ara', numberOfAyahs: 227 },
+                    { number: 27, name: 'النمل', englishName: 'An-Naml', numberOfAyahs: 93 },
+                    { number: 28, name: 'القصص', englishName: 'Al-Qasas', numberOfAyahs: 88 },
+                    { number: 29, name: 'العنكبوت', englishName: 'Al-\'Ankabut', numberOfAyahs: 69 },
+                    { number: 30, name: 'الروم', englishName: 'Ar-Rum', numberOfAyahs: 60 },
+                    { number: 31, name: 'لقمان', englishName: 'Luqman', numberOfAyahs: 34 },
+                    { number: 32, name: 'السجدة', englishName: 'As-Sajdah', numberOfAyahs: 30 },
+                    { number: 33, name: 'الأحزاب', englishName: 'Al-Ahzab', numberOfAyahs: 73 },
+                    { number: 34, name: 'سبإ', englishName: 'Saba', numberOfAyahs: 54 },
+                    { number: 35, name: 'فاطر', englishName: 'Fatir', numberOfAyahs: 45 },
+                    { number: 36, name: 'يس', englishName: 'Ya-Sin', numberOfAyahs: 83 },
+                    { number: 37, name: 'الصافات', englishName: 'As-Saffat', numberOfAyahs: 182 },
+                    { number: 38, name: 'ص', englishName: 'Sad', numberOfAyahs: 88 },
+                    { number: 39, name: 'الزمر', englishName: 'Az-Zumar', numberOfAyahs: 75 },
+                    { number: 40, name: 'غافر', englishName: 'Ghafir', numberOfAyahs: 85 },
+                    { number: 41, name: 'فصلت', englishName: 'Fussilat', numberOfAyahs: 54 },
+                    { number: 42, name: 'الشورى', englishName: 'Ash-Shura', numberOfAyahs: 53 },
+                    { number: 43, name: 'الزخرف', englishName: 'Az-Zukhruf', numberOfAyahs: 89 },
+                    { number: 44, name: 'الدخان', englishName: 'Ad-Dukhan', numberOfAyahs: 59 },
+                    { number: 45, name: 'الجاثية', englishName: 'Al-Jathiyah', numberOfAyahs: 37 },
+                    { number: 46, name: 'الأحقاف', englishName: 'Al-Ahqaf', numberOfAyahs: 35 },
+                    { number: 47, name: 'محمد', englishName: 'Muhammad', numberOfAyahs: 38 },
+                    { number: 48, name: 'الفتح', englishName: 'Al-Fath', numberOfAyahs: 29 },
+                    { number: 49, name: 'الحجرات', englishName: 'Al-Hujurat', numberOfAyahs: 18 },
+                    { number: 50, name: 'ق', englishName: 'Qaf', numberOfAyahs: 45 },
+                    { number: 51, name: 'الذاريات', englishName: 'Adh-Dhariyat', numberOfAyahs: 60 },
+                    { number: 52, name: 'الطور', englishName: 'At-Tur', numberOfAyahs: 49 },
+                    { number: 53, name: 'النجم', englishName: 'An-Najm', numberOfAyahs: 62 },
+                    { number: 54, name: 'القمر', englishName: 'Al-Qamar', numberOfAyahs: 55 },
+                    { number: 55, name: 'الرحمن', englishName: 'Ar-Rahman', numberOfAyahs: 78 },
+                    { number: 56, name: 'الواقعة', englishName: 'Al-Waqi\'ah', numberOfAyahs: 96 },
+                    { number: 57, name: 'الحديد', englishName: 'Al-Hadid', numberOfAyahs: 29 },
+                    { number: 58, name: 'المجادلة', englishName: 'Al-Mujadila', numberOfAyahs: 22 },
+                    { number: 59, name: 'الحشر', englishName: 'Al-Hashr', numberOfAyahs: 24 },
+                    { number: 60, name: 'الممتحنة', englishName: 'Al-Mumtahinah', numberOfAyahs: 13 },
+                    { number: 61, name: 'الصف', englishName: 'As-Saff', numberOfAyahs: 14 },
+                    { number: 62, name: 'الجمعة', englishName: 'Al-Jumu\'ah', numberOfAyahs: 11 },
+                    { number: 63, name: 'المنافقون', englishName: 'Al-Munafiqun', numberOfAyahs: 11 },
+                    { number: 64, name: 'التغابن', englishName: 'At-Taghabun', numberOfAyahs: 18 },
+                    { number: 65, name: 'الطلاق', englishName: 'At-Talaq', numberOfAyahs: 12 },
+                    { number: 66, name: 'التحريم', englishName: 'At-Tahrim', numberOfAyahs: 12 },
+                    { number: 67, name: 'الملك', englishName: 'Al-Mulk', numberOfAyahs: 30 },
+                    { number: 68, name: 'القلم', englishName: 'Al-Qalam', numberOfAyahs: 52 },
+                    { number: 69, name: 'الحاقة', englishName: 'Al-Haaqqah', numberOfAyahs: 52 },
+                    { number: 70, name: 'المعارج', englishName: 'Al-Ma\'arij', numberOfAyahs: 44 },
+                    { number: 71, name: 'نوح', englishName: 'Nuh', numberOfAyahs: 28 },
+                    { number: 72, name: 'الجن', englishName: 'Al-Jinn', numberOfAyahs: 28 },
+                    { number: 73, name: 'المزمل', englishName: 'Al-Muzzammil', numberOfAyahs: 20 },
+                    { number: 74, name: 'المدثر', englishName: 'Al-Muddaththir', numberOfAyahs: 56 },
+                    { number: 75, name: 'القيامة', englishName: 'Al-Qiyamah', numberOfAyahs: 40 },
+                    { number: 76, name: 'الإنسان', englishName: 'Al-Insan', numberOfAyahs: 31 },
+                    { number: 77, name: 'المرسلات', englishName: 'Al-Mursalat', numberOfAyahs: 50 },
+                    { number: 78, name: 'النبإ', englishName: 'An-Naba', numberOfAyahs: 40 },
+                    { number: 79, name: 'النازعات', englishName: 'An-Nazi\'at', numberOfAyahs: 46 },
+                    { number: 80, name: 'عبس', englishName: 'Abasa', numberOfAyahs: 42 },
+                    { number: 81, name: 'التكوير', englishName: 'At-Takwir', numberOfAyahs: 29 },
+                    { number: 82, name: 'الإنفطار', englishName: 'Al-Infitar', numberOfAyahs: 19 },
+                    { number: 83, name: 'المطففين', englishName: 'Al-Mutaffifin', numberOfAyahs: 36 },
+                    { number: 84, name: 'الإنشقاق', englishName: 'Al-Inshiqaq', numberOfAyahs: 25 },
+                    { number: 85, name: 'البروج', englishName: 'Al-Buruj', numberOfAyahs: 22 },
+                    { number: 86, name: 'الطارق', englishName: 'At-Tariq', numberOfAyahs: 17 },
+                    { number: 87, name: 'الأعلى', englishName: 'Al-A\'la', numberOfAyahs: 19 },
+                    { number: 88, name: 'الغاشية', englishName: 'Al-Ghashiyah', numberOfAyahs: 26 },
+                    { number: 89, name: 'الفجر', englishName: 'Al-Fajr', numberOfAyahs: 30 },
+                    { number: 90, name: 'البلد', englishName: 'Al-Balad', numberOfAyahs: 20 },
+                    { number: 91, name: 'الشمس', englishName: 'Ash-Shams', numberOfAyahs: 15 },
+                    { number: 92, name: 'الليل', englishName: 'Al-Lail', numberOfAyahs: 21 },
+                    { number: 93, name: 'الضحى', englishName: 'Ad-Duha', numberOfAyahs: 11 },
+                    { number: 94, name: 'الشرح', englishName: 'Ash-Sharh', numberOfAyahs: 8 },
+                    { number: 95, name: 'التين', englishName: 'At-Tin', numberOfAyahs: 8 },
+                    { number: 96, name: 'العلق', englishName: 'Al-\'Alaq', numberOfAyahs: 19 },
+                    { number: 97, name: 'القدر', englishName: 'Al-Qadr', numberOfAyahs: 5 },
+                    { number: 98, name: 'البينة', englishName: 'Al-Bayyinah', numberOfAyahs: 8 },
+                    { number: 99, name: 'الزلزلة', englishName: 'Az-Zalzalah', numberOfAyahs: 8 },
+                    { number: 100, name: 'العاديات', englishName: 'Al-\'Adiyat', numberOfAyahs: 11 },
+                    { number: 101, name: 'القارعة', englishName: 'Al-Qari\'ah', numberOfAyahs: 11 },
+                    { number: 102, name: 'التكاثر', englishName: 'At-Takathur', numberOfAyahs: 8 },
+                    { number: 103, name: 'العصر', englishName: 'Al-\'Asr', numberOfAyahs: 3 },
+                    { number: 104, name: 'الهمزة', englishName: 'Al-Humazah', numberOfAyahs: 9 },
+                    { number: 105, name: 'الفيل', englishName: 'Al-Fil', numberOfAyahs: 5 },
+                    { number: 106, name: 'قريش', englishName: 'Quraysh', numberOfAyahs: 4 },
+                    { number: 107, name: 'الماعون', englishName: 'Al-Ma\'un', numberOfAyahs: 7 },
+                    { number: 108, name: 'الكوثر', englishName: 'Al-Kawthar', numberOfAyahs: 3 },
+                    { number: 109, name: 'الكافرون', englishName: 'Al-Kafirun', numberOfAyahs: 6 },
+                    { number: 110, name: 'النصر', englishName: 'An-Nasr', numberOfAyahs: 3 },
+                    { number: 111, name: 'المسد', englishName: 'Al-Masad', numberOfAyahs: 5 },
+                    { number: 112, name: 'الإخلاص', englishName: 'Al-Ikhlas', numberOfAyahs: 4 },
+                    { number: 113, name: 'الفلق', englishName: 'Al-Falaq', numberOfAyahs: 5 },
+                    { number: 114, name: 'الناس', englishName: 'An-Nas', numberOfAyahs: 6 }
+                ],
+                openModal(type) {
+                    document.getElementById(`${type}Modal`).classList.add('active');
+                },
+                closeModal(type) {
+                    document.getElementById(`${type}Modal`).classList.remove('active');
+                },
+                goToSurah(number) {
+                    window.location.href = `read.html?surah=${number}`;
+                },
+                goToJuz(juz) {
+                    // Implementasi untuk navigasi ke juz
+                    alert(`Navigasi ke Juz ${juz}`);
+                },
+                goToPage(page) {
+                    // Implementasi untuk navigasi ke halaman
+                    alert(`Navigasi ke Halaman ${page}`);
+                },
+                goToHizib(hizib) {
+                    // Implementasi untuk navigasi ke hizib
+                    alert(`Navigasi ke Hizib ${hizib}`);
+                },
+                goToRuku(ruku) {
+                    // Implementasi untuk navigasi ke ruku
+                    alert(`Navigasi ke Ruku ${ruku}`);
+                },
+                selectSurah(number) {
+                    this.goToSurah(number);
+                }
+            }
         }
-      }
-    }
-
-    // Keyboard navigation
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft") {
-        if (currentPage < 604) {
-          currentPage++;
-          loadPage(currentPage);
-          window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-        }
-      } else if (e.key === "ArrowRight") {
-        if (currentPage > 1) {
-          currentPage--;
-          loadPage(currentPage);
-          window.history.pushState({ page: currentPage }, '', `read.html?page=${currentPage}`);
-        }
-      }
-    });
-
-    // Load halaman pertama
-    loadPage(currentPage);
-  </script>
+    </script>
 </body>
 </html>
