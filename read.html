@@ -1,486 +1,153 @@
 <!DOCTYPE html>
-<html lang="ar">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quran Per Page</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Font Quran -->
-  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Amiri', serif; }
-  </style>
-</head>
-<body class="bg-gray-100 flex flex-col items-center p-2 sm:p-6 min-h-screen">
-
-  <div class="w-full max-w-2xl sm:max-w-3xl bg-white shadow-lg rounded-lg p-3 sm:p-6">
-    <h1 class="text-xl sm:text-2xl font-bold text-center mb-4">القرآن الكريم</h1>
-
-    <!-- Kontainer ayat -->
-    <div id="quran-page" dir="rtl" class="text-justify text-lg sm:text-2xl leading-relaxed min-h-96 p-2 sm:p-0 touch-auto select-text" style="line-height: 2.5;"></div>
-
-    <!-- Navigasi di tengah -->
-    <div class="flex justify-center mt-6 gap-3 sm:gap-6 flex-wrap items-center flex-row-reverse">
-      <button id="prev" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
-        <span class="material-icons">chevron_right</span>
-      </button>
-      <div class="text-center text-sm sm:text-base">
-        <span id="page-number">1</span> / <span>604</span>
-      </div>
-      <button id="next" class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12">
-        <span class="material-icons">chevron_left</span>
-      </button>
-    </div>
-  </div>
-
-  <script>
-    function quranApp() {
-      return {
-        currentPage: 1,
-        currentJuz: 1,
-        currentSurahName: 'سورة الفاتحة',
-        surahs: [],
-        showSurahModal: false,
-        showJuzModal: false,
-        showPageModal: false,
-
-        async init() {
-          // Get page from URL parameter
-          const urlParams = new URLSearchParams(window.location.search);
-          const pageParam = urlParams.get('page');
-          if (pageParam) {
-            this.currentPage = parseInt(pageParam);
-          }
-
-          // Load surahs list
-          try {
-            const res = await fetch('https://api.alquran.cloud/v1/surah');
-            const data = await res.json();
-            this.surahs = data.data;
-          } catch (err) {
-            console.error(err);
-          }
-
-          await this.loadPage(this.currentPage);
-        },
-
-        toArabicNumber(num) {
-          const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-          return String(num).split('').map(d => arabicDigits[d]).join('');
-        },
-
-        async loadPage(page) {
-          const res = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
-          const data = await res.json();
-          const ayahs = data.data.ayahs;
-
-          let pageText = "";
-          ayahs.forEach(ayah => {
-            pageText += ayah.text + " ﴿" + this.toArabicNumber(ayah.numberInSurah) + "﴾";
-          });
-
-          document.getElementById("quran-page").textContent = pageText;
-          this.currentPage = page;
-
-          // Update localStorage
-          localStorage.setItem('lastReadPage', page);
-
-          // Update URL without reload
-          window.history.pushState({ page: page }, '', `read.html?page=${page}`);
-
-          // Find current juz and surah
-          this.currentJuz = ayahs[0].juz;
-          const surahInfo = this.surahs.find(s => s.number === ayahs[0].surah.number);
-          if (surahInfo) {
-            this.currentSurahName = 'سورة ' + surahInfo.name.replace('سُورَةُ ', '');
-          }
-        },
-
-        prevPage() {
-          if (this.currentPage > 1) {
-            this.currentPage--;
-            this.loadPage(this.currentPage);
-          }
-        },
-
-        nextPage() {
-          if (this.currentPage < 604) {
-            this.currentPage++;
-            this.loadPage(this.currentPage);
-          }
-        },
-
-        async goToSurah(num) {
-          try {
-            const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
-            const data = await res.json();
-            const page = data.data.ayahs[0].page;
-            this.goToPage(page);
-          } catch (err) {
-            alert('Gagal membuka surah');
-          }
-        },
-
-        async goToJuz(num) {
-          try {
-            const res = await fetch(`https://api.alquran.cloud/v1/juz/${num}/quran-uthmani`);
-            const data = await res.json();
-            const page = data.data.ayahs[0].page;
-            this.goToPage(page);
-          } catch (err) {
-            alert('Gagal membuka juz');
-          }
-        },
-
-        goToPage(num) {
-          this.currentPage = num;
-          this.loadPage(num);
-        },
-
-        // Touch handling
-        touchStartX: 0,
-        touchStartY: 0,
-        touchEndX: 0,
-        touchEndY: 0,
-
-        handleTouchStart(e) {
-          this.touchStartX = e.changedTouches[0].clientX;
-          this.touchStartY = e.changedTouches[0].clientY;
-        },
-
-        handleTouchEnd(e) {
-          this.touchEndX = e.changedTouches[0].clientX;
-          this.touchEndY = e.changedTouches[0].clientY;
-          this.handleSwipe();
-        },
-
-        handleSwipe() {
-          const swipeThreshold = 50;
-          const diffX = this.touchStartX - this.touchEndX;
-          const diffY = Math.abs(this.touchStartY - this.touchEndY);
-
-          if (Math.abs(diffX) > swipeThreshold && diffY < swipeThreshold) {
-            if (diffX < 0) {
-              if (this.currentPage < 604) {
-                this.currentPage++;
-                this.loadPage(this.currentPage);
-              }
-            } else {
-              if (this.currentPage > 1) {
-                this.currentPage--;
-                this.loadPage(this.currentPage);
-              }
-            }
-          }
-        },
-
-        // Keyboard navigation
-        handleKeydown(e) {
-          if (e.key === "ArrowLeft") {
-            if (this.currentPage < 604) {
-              this.currentPage++;
-              this.loadPage(this.currentPage);
-            }
-          } else if (e.key === "ArrowRight") {
-            if (this.currentPage > 1) {
-              this.currentPage--;
-              this.loadPage(this.currentPage);
-            }
-          }
-        }
-      }
-    }
-
-    // Initialize event listeners
-    document.addEventListener('DOMContentLoaded', () => {
-      const app = document.querySelector('[x-data]');
-
-      // Touch events
-      const pageContainer = document.getElementById("quran-page");
-      pageContainer.addEventListener("touchstart", (e) => {
-        Alpine.$data(app).handleTouchStart(e);
-      }, { passive: true });
-
-      pageContainer.addEventListener("touchend", (e) => {
-        Alpine.$data(app).handleTouchEnd(e);
-      }, { passive: true });
-
-      // Keyboard events
-      document.addEventListener("keydown", (e) => {
-        Alpine.$data(app).handleKeydown(e);
-      });
-    });
-  </script>
-</body>
-</html>
-
-+++ read.html (修改后)
-<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quran Per Page</title>
+  <title>Mushaf Al-Qur'an</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Amiri', serif; }
-    [x-cloak] { display: none !important; }
+    #quran-page { touch-action: pan-y; }
   </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center p-2 sm:p-6 min-h-screen" x-data="quranApp()" x-init="init()">
+<body class="min-h-screen bg-neutral-100 px-3 py-4 sm:px-6 sm:py-8">
+  <main class="mx-auto w-full max-w-3xl">
+    <header class="mb-3 flex items-center justify-between gap-3 border-b border-neutral-300 pb-3 text-neutral-700">
+      <a href="index.html" class="flex items-center gap-1 text-sm font-medium hover:text-emerald-800" dir="ltr">
+        <span class="material-icons text-lg">arrow_back</span> Beranda
+      </a>
+      <div class="text-center">
+        <p id="surah-name" class="text-lg font-bold">سورة الفاتحة</p>
+        <p id="juz-name" class="text-sm text-neutral-500">الجزء ١</p>
+      </div>
+      <label class="flex items-center gap-2 text-sm" dir="ltr">
+        <span>Halaman</span>
+        <input id="page-input" type="number" min="1" max="604" value="1" aria-label="Nomor halaman"
+               class="w-16 rounded border border-neutral-300 bg-white px-2 py-1 text-center">
+      </label>
+    </header>
 
-  <div class="w-full max-w-2xl sm:max-w-3xl bg-white shadow-lg rounded-lg p-3 sm:p-6">
+    <section class="overflow-hidden border-y-2 border-emerald-800 bg-white px-5 py-8 shadow-sm sm:px-10" aria-label="Halaman mushaf">
+      <div id="quran-page" class="min-h-[65vh] text-justify text-2xl leading-[2.4] text-neutral-900 sm:text-3xl" dir="rtl"></div>
+      <p id="status" class="mt-4 text-center text-sm text-red-700" dir="ltr" role="status"></p>
+    </section>
 
-    <!-- Header dengan Navigasi Arab -->
-    <div class="flex justify-center items-center gap-4 mb-6 pb-4 border-b">
-      <button @click="showJuzModal = true" class="text-blue-600 hover:text-blue-800 font-bold text-sm sm:text-base cursor-pointer">
-        <span x-text="'الجزء ' + toArabicNumber(currentJuz)"></span>
-      </button>
-      <button @click="showPageModal = true" class="text-blue-600 hover:text-blue-800 font-bold text-lg sm:text-xl cursor-pointer">
-        <span x-text="toArabicNumber(currentPage)"></span>
-      </button>
-      <button @click="showSurahModal = true" class="text-blue-600 hover:text-blue-800 font-bold text-sm sm:text-base cursor-pointer">
-        <span x-text="currentSurahName"></span>
-      </button>
-    </div>
-
-    <!-- Kontainer ayat -->
-    <div id="quran-page" dir="rtl" class="text-justify text-lg sm:text-2xl leading-relaxed min-h-96 p-2 sm:p-0 touch-auto select-text"
-         style="line-height: 2.5;"
-         @touchstart="handleTouchStart($event)"
-         @touchend="handleTouchEnd($event)"></div>
-
-    <!-- Navigasi prev/next di bawah -->
-    <div class="flex justify-center mt-6 gap-3 sm:gap-6 flex-wrap">
-      <button @click="prevPage()" :disabled="currentPage <= 1"
-              class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12 disabled:opacity-50 disabled:cursor-not-allowed">
-        <span class="material-icons">chevron_right</span>
-      </button>
-      <button @click="nextPage()" :disabled="currentPage >= 604"
-              class="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition min-h-12 min-w-12 disabled:opacity-50 disabled:cursor-not-allowed">
+    <nav class="mt-4 flex items-center justify-between gap-3" dir="ltr" aria-label="Navigasi halaman mushaf">
+      <button id="previous-page" type="button" aria-label="Halaman sebelumnya" title="Halaman sebelumnya"
+              class="flex h-11 w-11 items-center justify-center rounded border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 disabled:opacity-40">
         <span class="material-icons">chevron_left</span>
       </button>
-    </div>
-  </div>
-
-  <!-- Modal Surah -->
-  <div x-show="showSurahModal" x-cloak class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showSurahModal = false">
-    <div class="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden">
-      <div class="p-4 border-b flex justify-between items-center">
-        <h3 class="font-bold text-lg">Pilih Surah</h3>
-        <button @click="showSurahModal = false" class="text-gray-500 hover:text-gray-700">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <div class="overflow-y-auto p-4 max-h-[50vh]">
-        <div class="grid grid-cols-2 gap-2">
-          <template x-for="s in surahs" :key="s.number">
-            <button @click="goToSurah(s.number); showSurahModal = false" class="p-3 bg-gray-50 rounded-xl text-left hover:bg-blue-50">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-blue-600" x-text="s.number + '.'"></span>
-                <span class="text-sm font-bold" x-text="s.englishName"></span>
-              </div>
-            </button>
-          </template>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Juz -->
-  <div x-show="showJuzModal" x-cloak class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showJuzModal = false">
-    <div class="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden">
-      <div class="p-4 border-b flex justify-between items-center">
-        <h3 class="font-bold text-lg">Pilih Juz</h3>
-        <button @click="showJuzModal = false" class="text-gray-500 hover:text-gray-700">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <div class="overflow-y-auto p-4 max-h-[50vh]">
-        <div class="grid grid-cols-5 gap-2">
-          <template x-for="i in 30" :key="i">
-            <button @click="goToJuz(i); showJuzModal = false" class="p-3 bg-green-50 text-green-700 rounded-xl text-center font-bold hover:bg-green-100" x-text="i"></button>
-          </template>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Page -->
-  <div x-show="showPageModal" x-cloak class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showPageModal = false">
-    <div class="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden">
-      <div class="p-4 border-b flex justify-between items-center">
-        <h3 class="font-bold text-lg">Pilih Halaman</h3>
-        <button @click="showPageModal = false" class="text-gray-500 hover:text-gray-700">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <div class="overflow-y-auto p-4 max-h-[50vh]">
-        <div class="grid grid-cols-8 gap-2">
-          <template x-for="i in 604" :key="i">
-            <button @click="goToPage(i); showPageModal = false" class="p-2 bg-purple-50 text-purple-700 rounded-lg text-center text-xs font-bold hover:bg-purple-100" x-text="i"></button>
-          </template>
-        </div>
-      </div>
-    </div>
-  </div>
+      <p class="text-sm font-medium text-neutral-700"><span id="page-number">1</span> / 604</p>
+      <button id="next-page" type="button" aria-label="Halaman berikutnya" title="Halaman berikutnya"
+              class="flex h-11 w-11 items-center justify-center rounded border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 disabled:opacity-40">
+        <span class="material-icons">chevron_right</span>
+      </button>
+    </nav>
+  </main>
 
   <script>
-    function quranApp() {
-      return {
-        currentPage: 1,
-        currentJuz: 1,
-        currentSurahName: 'سورة الفاتحة',
-        surahs: [],
-        showSurahModal: false,
-        showJuzModal: false,
-        showPageModal: false,
-        touchStartX: 0,
-        touchStartY: 0,
-        touchEndX: 0,
-        touchEndY: 0,
+    const PAGE_COUNT = 604;
+    const pageContent = document.getElementById('quran-page');
+    const pageNumber = document.getElementById('page-number');
+    const pageInput = document.getElementById('page-input');
+    const status = document.getElementById('status');
+    let currentPage = 1;
+    let requestId = 0;
+    let touchStart = null;
 
-        async init() {
-          const urlParams = new URLSearchParams(window.location.search);
-          const pageParam = urlParams.get('page');
-          if (pageParam) {
-            this.currentPage = parseInt(pageParam);
-          }
+    function toArabicNumber(number) {
+      const digits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+      return String(number).replace(/\d/g, digit => digits[digit]);
+    }
 
+    function rememberPosition(ayahs, page) {
+      const current = { page, surah: ayahs[0].surah.number, ayat: ayahs[0].numberInSurah };
+      try {
+        const saved = JSON.parse(localStorage.getItem('lastRead') || 'null');
+        const positions = Array.isArray(saved) ? saved : (saved ? [saved] : []);
+        const previous = positions.find(position => position.page !== page);
+        localStorage.setItem('lastRead', JSON.stringify([current, previous].filter(Boolean)));
+        localStorage.setItem('lastReadPage', String(page));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function loadPage(requestedPage, replaceUrl = false) {
+      const page = Math.min(PAGE_COUNT, Math.max(1, Number.parseInt(requestedPage, 10) || 1));
+      const thisRequest = ++requestId;
+      status.textContent = 'Memuat halaman…';
+      try {
+        const response = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
+        const result = await response.json();
+        const ayahs = result.data?.ayahs;
+        if (!response.ok || !ayahs?.length) throw new Error('Halaman tidak dapat dimuat.');
+        if (thisRequest !== requestId) return;
+
+        pageContent.textContent = ayahs.map(ayah => `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`).join(' ');
+        currentPage = page;
+        pageNumber.textContent = page;
+        pageInput.value = page;
+        document.getElementById('surah-name').textContent = ayahs[0].surah.name;
+        document.getElementById('juz-name').textContent = `الجزء ${toArabicNumber(ayahs[0].juz)}`;
+        document.getElementById('previous-page').disabled = page <= 1;
+        document.getElementById('next-page').disabled = page >= PAGE_COUNT;
+        status.textContent = '';
+        history[replaceUrl ? 'replaceState' : 'pushState']({ page }, '', `read.html?page=${page}`);
+        rememberPosition(ayahs, page);
+      } catch (error) {
+        if (thisRequest === requestId) status.textContent = 'Gagal memuat halaman. Periksa koneksi internet lalu coba lagi.';
+        console.error(error);
+      }
+    }
+
+    async function initializeReader() {
+      const params = new URLSearchParams(location.search);
+      let page = Number.parseInt(params.get('page'), 10);
+      if (!Number.isInteger(page) && params.has('surah')) {
+        const surah = Number.parseInt(params.get('surah'), 10);
+        const ayat = Math.max(1, Number.parseInt(params.get('ayat') || '1', 10));
+        if (surah >= 1 && surah <= 114) {
           try {
-            const res = await fetch('https://api.alquran.cloud/v1/surah');
-            const data = await res.json();
-            this.surahs = data.data;
-          } catch (err) {
-            console.error(err);
-          }
-
-          await this.loadPage(this.currentPage);
-
-          document.addEventListener("keydown", (e) => this.handleKeydown(e));
-        },
-
-        toArabicNumber(num) {
-          const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-          return String(num).split('').map(d => arabicDigits[d]).join('');
-        },
-
-        async loadPage(page) {
-          const res = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
-          const data = await res.json();
-          const ayahs = data.data.ayahs;
-
-          let pageText = "";
-          ayahs.forEach(ayah => {
-            pageText += ayah.text + " ﴿" + this.toArabicNumber(ayah.numberInSurah) + "﴾";
-          });
-
-          document.getElementById("quran-page").textContent = pageText;
-          this.currentPage = page;
-
-          localStorage.setItem('lastReadPage', page);
-          window.history.pushState({ page: page }, '', `read.html?page=${page}`);
-
-          this.currentJuz = ayahs[0].juz;
-          const surahInfo = this.surahs.find(s => s.number === ayahs[0].surah.number);
-          if (surahInfo) {
-            this.currentSurahName = 'سورة ' + surahInfo.name.replace('سُورَةُ ', '');
-          }
-        },
-
-        prevPage() {
-          if (this.currentPage > 1) {
-            this.currentPage--;
-            this.loadPage(this.currentPage);
-          }
-        },
-
-        nextPage() {
-          if (this.currentPage < 604) {
-            this.currentPage++;
-            this.loadPage(this.currentPage);
-          }
-        },
-
-        async goToSurah(num) {
-          try {
-            const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
-            const data = await res.json();
-            const page = data.data.ayahs[0].page;
-            this.goToPage(page);
-          } catch (err) {
-            alert('Gagal membuka surah');
-          }
-        },
-
-        async goToJuz(num) {
-          try {
-            const res = await fetch(`https://api.alquran.cloud/v1/juz/${num}/quran-uthmani`);
-            const data = await res.json();
-            const page = data.data.ayahs[0].page;
-            this.goToPage(page);
-          } catch (err) {
-            alert('Gagal membuka juz');
-          }
-        },
-
-        goToPage(num) {
-          this.currentPage = num;
-          this.loadPage(num);
-        },
-
-        handleTouchStart(e) {
-          this.touchStartX = e.changedTouches[0].clientX;
-          this.touchStartY = e.changedTouches[0].clientY;
-        },
-
-        handleTouchEnd(e) {
-          this.touchEndX = e.changedTouches[0].clientX;
-          this.touchEndY = e.changedTouches[0].clientY;
-          this.handleSwipe();
-        },
-
-        handleSwipe() {
-          const swipeThreshold = 50;
-          const diffX = this.touchStartX - this.touchEndX;
-          const diffY = Math.abs(this.touchStartY - this.touchEndY);
-
-          if (Math.abs(diffX) > swipeThreshold && diffY < swipeThreshold) {
-            if (diffX < 0) {
-              if (this.currentPage < 604) {
-                this.currentPage++;
-                this.loadPage(this.currentPage);
-              }
-            } else {
-              if (this.currentPage > 1) {
-                this.currentPage--;
-                this.loadPage(this.currentPage);
-              }
-            }
-          }
-        },
-
-        handleKeydown(e) {
-          if (e.key === "ArrowLeft") {
-            if (this.currentPage < 604) {
-              this.currentPage++;
-              this.loadPage(this.currentPage);
-            }
-          } else if (e.key === "ArrowRight") {
-            if (this.currentPage > 1) {
-              this.currentPage--;
-              this.loadPage(this.currentPage);
-            }
+            const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayat}/quran-uthmani`);
+            const result = await response.json();
+            if (response.ok) page = result.data?.page;
+          } catch (error) {
+            console.error(error);
           }
         }
       }
+      await loadPage(Number.isInteger(page) ? page : 1, true);
     }
+
+    document.getElementById('previous-page').addEventListener('click', () => loadPage(currentPage - 1));
+    document.getElementById('next-page').addEventListener('click', () => loadPage(currentPage + 1));
+    pageInput.addEventListener('change', () => loadPage(pageInput.value));
+    window.addEventListener('popstate', event => {
+      const page = event.state?.page || Number.parseInt(new URLSearchParams(location.search).get('page'), 10) || 1;
+      loadPage(page, true);
+    });
+    window.addEventListener('keydown', event => {
+      if (event.target instanceof HTMLInputElement) return;
+      if (event.key === 'ArrowLeft') loadPage(currentPage + 1);
+      if (event.key === 'ArrowRight') loadPage(currentPage - 1);
+    });
+    pageContent.addEventListener('touchstart', event => {
+      touchStart = event.changedTouches[0];
+    }, { passive: true });
+    pageContent.addEventListener('touchend', event => {
+      if (!touchStart) return;
+      const touchEnd = event.changedTouches[0];
+      const distanceX = touchEnd.clientX - touchStart.clientX;
+      const distanceY = Math.abs(touchEnd.clientY - touchStart.clientY);
+      if (distanceX > 50 && distanceY < 50) loadPage(currentPage + 1);
+      else if (distanceX < -50 && distanceY < 50) loadPage(currentPage - 1);
+      touchStart = null;
+    }, { passive: true });
+
+    initializeReader();
   </script>
 </body>
 </html>
