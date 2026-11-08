@@ -6,8 +6,11 @@
     <title>Al-Qur'an</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     <style>
         [x-cloak] { display: none !important; }
+        .font-arabic { font-family: 'Amiri', 'Traditional Arabic', serif; }
     </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900 min-h-screen" x-data="beranda()" x-cloak>
@@ -148,61 +151,197 @@
             </p>
         </section>
 
+        <!-- ===== Akses Cepat ===== -->
+        <section id="akses-cepat" class="mt-8">
+            <h2 class="mb-3 text-base font-semibold text-neutral-700">Akses Cepat</h2>
+            <div class="flex flex-wrap gap-2">
+                <template x-for="k in AKSES_CEPAT" :key="k.label">
+                    <a :href="k.href"
+                       class="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 hover:shadow-sm"
+                       x-text="k.label"></a>
+                </template>
+            </div>
+        </section>
+
+        <!-- ===== Daftar Surah / Halaman / Juz / Hizb / Ruku ===== -->
+        <section id="daftar" class="mt-8">
+            <!-- Tab pilihan -->
+            <div class="mb-3 flex overflow-x-auto rounded-xl border border-neutral-200 bg-white p-1 shadow-sm [scrollbar-width:none]">
+                <template x-for="t in TABS" :key="t.id">
+                    <button @click="tab = t.id"
+                            class="flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition"
+                            :class="tab === t.id ? 'bg-emerald-700 text-white shadow' : 'text-neutral-600 hover:bg-emerald-50'"
+                            x-text="t.label"></button>
+                </template>
+            </div>
+
+            <!-- List default: Surah -->
+            <ul x-show="tab === 'surah'" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <template x-for="s in surahList" :key="s.nomor">
+                    <li>
+                        <a :href="'read.html?surah=' + s.nomor"
+                           class="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                            <span class="relative flex h-10 w-10 shrink-0 items-center justify-center">
+                                <svg viewBox="0 0 100 100" class="absolute inset-0 h-full w-full text-emerald-700">
+                                    <polygon points="50,2 61.8,12.6 78,9.5 83.5,24.6 98,31 94.5,47 100,61.8 88.2,72.4 78,86.5 62.5,85 50,98 37.5,85 22,86.5 11.8,72.4 0,61.8 5.5,47 2,31 16.5,24.6 22,9.5 38.2,12.6"
+                                             transform="scale(0.92) translate(4,4)"
+                                             fill="none" stroke="currentColor" stroke-width="4"/>
+                                </svg>
+                                <span class="relative text-xs font-bold text-emerald-800" x-text="s.nomor"></span>
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-semibold text-neutral-800" x-text="s.namaLatin"></span>
+                                <span class="block truncate text-xs text-neutral-500" x-text="s.arti"></span>
+                                <span class="block text-[11px] text-neutral-400" x-text="s.ayat + ' ayat'"></span>
+                            </span>
+                            <span class="font-arabic shrink-0 text-lg leading-none text-emerald-800" dir="rtl" x-text="s.namaArab"></span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+
+            <!-- List Halaman (Mushaf 606 halaman, 15 baris/halaman) -->
+            <div x-show="tab === 'halaman'" class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+                <p class="mb-3 text-xs text-neutral-500">
+                    Pilih halaman mushaf (1–606) untuk membuka pembatasnya.
+                </p>
+                <div class="grid grid-cols-6 gap-2 sm:grid-cols-10">
+                    <template x-for="h in HALAMAN" :key="h">
+                        <a :href="'read.html?page=' + h"
+                           class="flex aspect-square items-center justify-center rounded-lg border border-neutral-200 text-sm font-medium text-neutral-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800"
+                           x-text="h"></a>
+                    </template>
+                </div>
+            </div>
+
+            <!-- List Juz (30 juz, awal di halaman mushaf) -->
+            <ul x-show="tab === 'juz'" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <template x-for="j in JUZ" :key="j.n">
+                    <li>
+                        <a :href="'read.html?page=' + j.halaman"
+                           class="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                            <span>
+                                <span class="block text-sm font-semibold text-neutral-800" x-text="'Juz ' + j.n"></span>
+                                <span class="block text-xs text-neutral-500" x-text="'Mulai halaman ' + j.halaman"></span>
+                            </span>
+                            <span class="text-xs font-medium text-emerald-700">Buka →</span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+
+            <!-- List Hizb (60 hizb, per juz = 2 hizb) -->
+            <ul x-show="tab === 'hizb'" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <template x-for="hz in HIZB" :key="hz.n">
+                    <li>
+                        <a :href="'read.html?page=' + hz.halaman"
+                           class="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                            <span>
+                                <span class="block text-sm font-semibold text-neutral-800" x-text="'Hizb ' + hz.n"></span>
+                                <span class="block text-xs text-neutral-500" x-text="'Juz ' + hz.juz + ' · halaman ' + hz.halaman"></span>
+                            </span>
+                            <span class="text-xs font-medium text-emerald-700">Buka →</span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+
+            <!-- List Ruku (rujukan halaman berdasarkan pembagian ruku standar) -->
+            <ul x-show="tab === 'ruku'" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <template x-for="r in RUKU" :key="r.surah + '-' + r.ruku">
+                    <li>
+                        <a :href="'read.html?surah=' + r.surah + '&ayat=' + r.ayatAwal"
+                           class="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+                            <span>
+                                <span class="block text-sm font-semibold text-neutral-800"
+                                       x-text="'Ruku ' + r.ruku + ' — ' + namaSurah(r.surah) + ':' + r.ayatAwal + '–' + r.ayatAkhir"></span>
+                                <span class="block text-xs text-neutral-500" x-text="namaArti(r.surah)"></span>
+                            </span>
+                            <span class="text-xs font-medium text-emerald-700">Baca →</span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+        </section>
+
     </main>
 
     <script>
         // Daftar 114 surah: [nomor, namaLatin, arti, jumlahAyat]
         const SURAH_DATA = [
-            [1,"Al-Fatihah","Pembukaan",7],[2,"Al-Baqarah","Sapi Betina",286],[3,"Ali 'Imran","Keluarga Imran",200],
-            [4,"An-Nisa","Wanita",176],[5,"Al-Ma'idah","Hidangan",120],[6,"Al-An'am","Binatang Ternak",165],
-            [7,"Al-A'raf","Tempat Tertinggi",206],[8,"Al-Anfal","Harta Rampasan Perang",75],[9,"At-Taubah","Pengampunan",129],
-            [10,"Yunus","Nabi Yunus",109],[11,"Hud","Nabi Hud",123],[12,"Yusuf","Nabi Yusuf",111],
-            [13,"Ar-Ra'd","Guruh",43],[14,"Ibrahim","Nabi Ibrahim",52],[15,"Al-Hijr","Gunung Hijr",99],
-            [16,"An-Nahl","Lebah",128],[17,"Al-Isra'","Perjalanan Malam",111],[18,"Al-Kahf","Gua",110],
-            [19,"Maryam","Maryam",98],[20,"Taha","Ta Ha",135],[21,"Al-Anbiya","Para Nabi",112],
-            [22,"Al-Hajj","Haji",78],[23,"Al-Mu'minun","Orang-orang Mukmin",118],[24,"An-Nur","Cahaya",64],
-            [25,"Al-Furqan","Pembeda",77],[26,"Asy-Syu'ara","Para Penyair",227],[27,"An-Naml","Semut",93],
-            [28,"Al-Qasas","Kisah-kisah",88],[29,"Al-'Ankabut","Laba-laba",69],[30,"Ar-Rum","Bangsa Romawi",60],
-            [31,"Luqman","Luqman",34],[32,"As-Sajdah","Sujud",30],[33,"Al-Ahzab","Golongan yang Bersekutu",73],
-            [34,"Saba'","Kaum Saba'",54],[35,"Fatir","Pencipta",45],[36,"Yasin","Yasin",83],
-            [37,"As-Saffat","Barisan-barisan",182],[38,"Sad","Ṣād",88],[39,"Az-Zumar","Rombongan",75],
-            [40,"Gafir","Yang Mengampuni",85],[41,"Fussilat","Yang Dijelaskan",54],[42,"Asy-Syura","Musyawarah",53],
-            [43,"Az-Zukhruf","Perhiasan",89],[44,"Ad-Dukhan","Kabut",59],[45,"Al-Jasiyah","Yang Berjongkok",37],
-            [46,"Al-Ahqaf","Bukit Pasir",35],[47,"Muhammad","Nabi Muhammad",38],[48,"Al-Fath","Kemenangan",29],
-            [49,"Al-Hujurat","Kamar-kamar",18],[50,"Qaf","Qāf",45],[51,"Adz-Dzariyat","Angin yang Menerbangkan",60],
-            [52,"Ath-Thur","Bukit Tursina",49],[53,"An-Najm","Bintang",62],[54,"Al-Qamar","Bulan",55],
-            [55,"Ar-Rahman","Yang Maha Pengasih",78],[56,"Al-Waqi'ah","Hari Kiamat",96],[57,"Al-Hadid","Besi",29],
-            [58,"Al-Mujadalah","Perempuan yang Mengajukan Gugatan",22],[59,"Al-Hasyr","Pengusiran",24],[60,"Al-Mumtahanah","Perempuan yang Diuji",13],
-            [61,"As-Saff","Barisan",14],[62,"Al-Jumu'ah","Hari Jumat",11],[63,"Al-Munafiqun","Orang-orang Munafik",11],
-            [64,"At-Tagabun","Hari Ditampakkan Kesalahan",18],[65,"Ath-Thalaq","Talak",12],[66,"At-Tahrim","Pengharaman",12],
-            [67,"Al-Mulk","Kerajaan",30],[68,"Al-Qalam","Pena",52],[69,"Al-Haqqah","Hari Berbuat Baik",52],
-            [70,"Al-Ma'arij","Tempat Naik",44],[71,"Nuh","Nabi Nuh",28],[72,"Al-Jinn","Jin",28],
-            [73,"Al-Muzzammil","Orang yang Berselimut",20],[74,"Al-Muddassir","Orang yang Berkemul",56],[75,"Al-Qiyamah","Hari Kiamat",40],
-            [76,"Al-Insan","Manusia",31],[77,"Al-Mursalat","Malaikat yang Diutus",50],[78,"An-Naba'","Berita Besar",40],
-            [79,"An-Nazi'at","Malaikat yang Mencabut",46],[80,'Abasa',"Muka Masam",42],[81,"At-Takwir","Gulundungnya Matahari",29],
-            [82,"Al-Infitar","Terbelahnya Langit",19],[83,"Al-Mutaffifin","Orang yang Curang",36],[84,"Al-Insyiqaq","Terbelahnya Langit",25],
-            [85,"Al-Buruj","Gugusan Bintang",22],[86,"Ath-Thariq","Yang Datang di Malam Hari",17],[87,"Al-A'la","Yang Paling Tinggi",19],
-            [88,"Al-Gasyiyah","Hari Pembalasan",26],[89,"Al-Fajr","Fajar",30],[90,"Al-Balad","Negeri",20],
-            [91,"Asy-Syams","Matahari",15],[92,"Al-Lail","Malam",21],[93,"Ad-Duha","Time After Sunrise",11],
-            [94,"Asy-Syarh","Kelapangan",8],[95,"At-Tin","Buah Tin",8],[96,"Al-'Alaq","Segumpal Darah",19],
-            [97,"Al-Qadr","Kemuliaan",5],[98,"Al-Bayyinah","Bukti Nyata",8],[99,"Az-Zalzalah","Kegoncangan",8],
-            [100,"Al-'Adiyat","Kuda Perang",11],[101,"Al-Qari'ah","Hari Kiamat",11],[102,"At-Takasur"," Bermegah-megahan",8],
-            [103,"Al-'Asr","Masa",3],[104,"Al-Humazah","Pengumpat",9],[105,"Al-Fil","Gajah",5],
-            [106,"Quraisy","Suku Quraisy",4],[107,"Al-Ma'un","Barang Berguna",7],[108,"Al-Kausar","Nikmat Berlimpah",3],
-            [109,"Al-Kafirun","Orang-orang Kafir",6],[110,"An-Nasr","Pertolongan",3],[111,"Al-Lahab","Gejolak Api",5],
-            [112,"Al-Ikhlas","Eksistensi Allah",4],[113,"Al-Falaq","Waktu Subuh",5],[114,"An-Nas","Manusia",6]
+            [1,"Al-Fatihah","Pembukaan",7,"الفاتحة"],[2,"Al-Baqarah","Sapi Betina",286,"البقرة"],[3,"Ali 'Imran","Keluarga Imran",200,"آل عمران"],
+            [4,"An-Nisa","Wanita",176,"النساء"],[5,"Al-Ma'idah","Hidangan",120,"المائدة"],[6,"Al-An'am","Binatang Ternak",165,"الأنعام"],
+            [7,"Al-A'raf","Tempat Tertinggi",206,"الأعراف"],[8,"Al-Anfal","Harta Rampasan Perang",75,"الأنفال"],[9,"At-Taubah","Pengampunan",129,"التوبة"],
+            [10,"Yunus","Nabi Yunus",109,"يونس"],[11,"Hud","Nabi Hud",123,"هود"],[12,"Yusuf","Nabi Yusuf",111,"يوسف"],
+            [13,"Ar-Ra'd","Guruh",43,"الرعد"],[14,"Ibrahim","Nabi Ibrahim",52,"إبراهيم"],[15,"Al-Hijr","Gunung Hijr",99,"الحجر"],
+            [16,"An-Nahl","Lebah",128,"النحل"],[17,"Al-Isra'","Perjalanan Malam",111,"الإسراء"],[18,"Al-Kahf","Gua",110,"الكهف"],
+            [19,"Maryam","Maryam",98,"مريم"],[20,"Taha","Ta Ha",135,"طه"],[21,"Al-Anbiya","Para Nabi",112,"الأنبياء"],
+            [22,"Al-Hajj","Haji",78,"الحج"],[23,"Al-Mu'minun","Orang-orang Mukmin",118,"المؤمنون"],[24,"An-Nur","Cahaya",64,"النور"],
+            [25,"Al-Furqan","Pembeda",77,"الفرقان"],[26,"Asy-Syu'ara","Para Penyair",227,"الشعراء"],[27,"An-Naml","Semut",93,"النمل"],
+            [28,"Al-Qasas","Kisah-kisah",88,"القصص"],[29,"Al-'Ankabut","Laba-laba",69,"العنكبوت"],[30,"Ar-Rum","Bangsa Romawi",60,"الروم"],
+            [31,"Luqman","Luqman",34,"لقمان"],[32,"As-Sajdah","Sujud",30,"السجدة"],[33,"Al-Ahzab","Golongan yang Bersekutu",73,"الأحزاب"],
+            [34,"Saba'","Kaum Saba'",54,"سبأ"],[35,"Fatir","Pencipta",45,"فاطر"],[36,"Yasin","Yasin",83,"يس"],
+            [37,"As-Saffat","Barisan-barisan",182,"الصافات"],[38,"Sad","Ṣād",88,"ص"],[39,"Az-Zumar","Rombongan",75,"الزمر"],
+            [40,"Gafir","Yang Mengampuni",85,"غافر"],[41,"Fussilat","Yang Dijelaskan",54,"فصلت"],[42,"Asy-Syura","Musyawarah",53,"الشورى"],
+            [43,"Az-Zukhruf","Perhiasan",89,"الزخرف"],[44,"Ad-Dukhan","Kabut",59,"الدخان"],[45,"Al-Jasiyah","Yang Berjongkok",37,"الجاثية"],
+            [46,"Al-Ahqaf","Bukit Pasir",35,"الأحقاف"],[47,"Muhammad","Nabi Muhammad",38,"محمد"],[48,"Al-Fath","Kemenangan",29,"الفتح"],
+            [49,"Al-Hujurat","Kamar-kamar",18,"الحجرات"],[50,"Qaf","Qāf",45,"ق"],[51,"Adz-Dzariyat","Angin yang Menerbangkan",60,"الذاريات"],
+            [52,"Ath-Thur","Bukit Tursina",49,"الطور"],[53,"An-Najm","Bintang",62,"النجم"],[54,"Al-Qamar","Bulan",55,"القمر"],
+            [55,"Ar-Rahman","Yang Maha Pengasih",78,"الرحمن"],[56,"Al-Waqi'ah","Hari Kiamat",96,"الواقعة"],[57,"Al-Hadid","Besi",29,"الحديد"],
+            [58,"Al-Mujadalah","Perempuan yang Mengajukan Gugatan",22,"المجادلة"],[59,"Al-Hasyr","Pengusiran",24,"الحشر"],[60,"Al-Mumtahanah","Perempuan yang Diuji",13,"الممتحنة"],
+            [61,"As-Saff","Barisan",14,"الصف"],[62,"Al-Jumu'ah","Hari Jumat",11,"الجمعة"],[63,"Al-Munafiqun","Orang-orang Munafik",11,"المنافقون"],
+            [64,"At-Tagabun","Hari Ditampakkan Kesalahan",18,"التغابن"],[65,"Ath-Thalaq","Talak",12,"الطلاق"],[66,"At-Tahrim","Pengharaman",12,"التحريم"],
+            [67,"Al-Mulk","Kerajaan",30,"الملك"],[68,"Al-Qalam","Pena",52,"القلم"],[69,"Al-Haqqah","Hari Berbuat Baik",52,"الحاقة"],
+            [70,"Al-Ma'arij","Tempat Naik",44,"المعارج"],[71,"Nuh","Nabi Nuh",28,"نوح"],[72,"Al-Jinn","Jin",28,"الجن"],
+            [73,"Al-Muzzammil","Orang yang Berselimut",20,"المزمل"],[74,"Al-Muddassir","Orang yang Berkemul",56,"المدثر"],[75,"Al-Qiyamah","Hari Kiamat",40,"القيامة"],
+            [76,"Al-Insan","Manusia",31,"الإنسان"],[77,"Al-Mursalat","Malaikat yang Diutus",50,"المرسلات"],[78,"An-Naba'","Berita Besar",40,"النبأ"],
+            [79,"An-Nazi'at","Malaikat yang Mencabut",46,"النازعات"],[80,'Abasa',"Muka Masam",42,"عبس"],[81,"At-Takwir","Gulundungnya Matahari",29,"التكوير"],
+            [82,"Al-Infitar","Terbelahnya Langit",19,"الانفطار"],[83,"Al-Mutaffifin","Orang yang Curang",36,"المطففين"],[84,"Al-Insyiqaq","Terbelahnya Langit",25,"الانشقاق"],
+            [85,"Al-Buruj","Gugusan Bintang",22,"البروج"],[86,"Ath-Thariq","Yang Datang di Malam Hari",17,"الطارق"],[87,"Al-A'la","Yang Paling Tinggi",19,"الأعلى"],
+            [88,"Al-Gasyiyah","Hari Pembalasan",26,"الغاشية"],[89,"Al-Fajr","Fajar",30,"الفجر"],[90,"Al-Balad","Negeri",20,"البلد"],
+            [91,"Asy-Syams","Matahari",15,"الشمس"],[92,"Al-Lail","Malam",21,"الليل"],[93,"Ad-Duha","Time After Sunrise",11,"الضحى"],
+            [94,"Asy-Syarh","Kelapangan",8,"الشرح"],[95,"At-Tin","Buah Tin",8,"التين"],[96,"Al-'Alaq","Segumpal Darah",19,"العلق"],
+            [97,"Al-Qadr","Kemuliaan",5,"القدر"],[98,"Al-Bayyinah","Bukti Nyata",8,"البينة"],[99,"Az-Zalzalah","Kegoncangan",8,"الزلزلة"],
+            [100,"Al-'Adiyat","Kuda Perang",11,"العاديات"],[101,"Al-Qari'ah","Hari Kiamat",11,"القارعة"],[102,"At-Takasur"," Bermegah-megahan",8,"التكاثر"],
+            [103,"Al-'Asr","Masa",3,"العصر"],[104,"Al-Humazah","Pengumpat",9,"الهمزة"],[105,"Al-Fil","Gajah",5,"الفيل"],
+            [106,"Quraisy","Suku Quraisy",4,"قريش"],[107,"Al-Ma'un","Barang Berguna",7,"الماعون"],[108,"Al-Kausar","Nikmat Berlimpah",3,"الكوثر"],
+            [109,"Al-Kafirun","Orang-orang Kafir",6,"الكافرون"],[110,"An-Nasr","Pertolongan",3,"النصر"],[111,"Al-Lahab","Gejolak Api",5,"المسد"],
+            [112,"Al-Ikhlas","Eksistensi Allah",4,"الإخلاص"],[113,"Al-Falaq","Waktu Subuh",5,"الفلق"],[114,"An-Nas","Manusia",6,"الناس"]
         ];
+
+        // Akhir ayat tiap ruku per surah (pembagian standar, total 578 ruku)
+        const RUKU_ENDS = {1:[7],2:[5,20,29,37,53,74,88,97,105,111,141,150,163,176,188,203,212,220,228,237,245,252,257,267,275,281,283,286],3:[29,56,63,80,92,100,120,146,156,163,176,186,200],4:[14,23,40,50,64,79,91,95,103,115,128,135,147,151,163,171,176],5:[16,26,32,41,47,57,67,81,86,94,101,108,115,120],6:[20,37,56,70,83,94,103,111,121,131,140,146,153,165],7:[26,41,52,60,70,81,87,97,105,123,140,151,160,170,180,189,199,206],8:[16,29,36,45,61,68,75],9:[18,28,35,45,55,69,81,93,101,106,113,118,122,129],10:[11,23,30,42,53,66,79,90,93,100,109],11:[12,25,38,49,64,77,88,97,108,123],12:[6,18,27,35,44,55,64,74,84,93,99,105,111],13:[9,18,24,31,37,43],14:[12,23,34,45,52],15:[15,31,49,64,75,87,99],16:[8,21,34,44,53,62,71,80,89,96,103,112,120,128],17:[8,18,28,41,54,65,75,85,96,104,111],18:[12,24,34,49,59,65,82,98,110],19:[13,34,50,65,76,98],20:[37,54,76,98,118,127,135],21:[11,24,36,50,66,81,90,101,112],22:[7,14,23,34,41,54,65,78],23:[22,40,58,74,89,104,118],24:[10,20,28,34,40,49,53,61,64],25:[10,20,30,42,54,64,77],26:[37,75,111,140,159,175,191,227],27:[14,28,44,56,63,69,77,82,88,93],28:[13,23,35,46,51,60,70,81,88],29:[7,13,23,31,45,54,69],30:[9,16,27,34,40,50,60],31:[11,19,25,34],32:[14,22,30],33:[6,20,23,34,40,46,51,59,68,73],34:[15,22,33,41,46,54],35:[8,14,26,32,37,41,45],36:[12,29,45,59,68,83],37:[26,49,82,102,128,160,182],38:[20,30,44,61,75,88],39:[8,20,31,40,49,58,68,75],40:[20,33,46,57,64,70,76,82,85],41:[11,18,27,38,46,54],42:[13,21,30,37,45,53],43:[15,30,45,60,73,89],44:[19,39,59],45:[11,20,27,37],46:[14,20,26,35],47:[19,27,31,38],48:[10,19,29],49:[5,13,18],50:[15,30,45],51:[14,30,41,60],52:[11,21,33,49],53:[11,18,27,32,43,54,62],54:[12,28,40,55],55:[13,25,33,45,58,68,78],56:[17,40,56,74,88,96],57:[6,11,19,25,29],58:[7,14,19,22],59:[6,13,17,24],60:[6,13],61:[9,14],62:[8,11],63:[6,11],64:[10,18],65:[7,12],66:[6,12],67:[12,23,30],68:[16,33,47,52],69:[18,34,52],70:[18,35,44],71:[9,20,28],72:[13,23,28],73:[10,19,20],74:[10,25,39,47,56],75:[15,30,40],76:[12,22,31],77:[16,28,38,50],78:[10,16,30,40],79:[14,26,36,46],80:[23,42],81:[14,29],82:[12,19],83:[17,28,36],84:[15,25],85:[11,22],86:[7,17],87:[7,14,19],88:[16,26],89:[14,23,30],90:[10,20],91:[10,15],92:[11,21],93:[7,11],94:[6,8],95:[6,8],96:[8,19],97:[5],98:[5,8],99:[5,8],100:[5,11],101:[7,11],102:[8],103:[3],104:[9],105:[5],106:[4],107:[4,7],108:[3],109:[6],110:[3],111:[5],112:[4],113:[5],114:[6]};
+
+        // Halaman awal setiap juz (mushaf Madinah, 606 halaman)
+        const JUZ_HALAMAN = [1,22,42,62,82,102,121,142,161,181,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,501,521,541,562,582];
 
         function beranda() {
             return {
                 sidebar: false,
                 cari: false,
                 q: '',
-                surahList: SURAH_DATA.map(([nomor, namaLatin, arti, ayat]) => ({ nomor, namaLatin, arti, ayat })),
+                surahList: SURAH_DATA.map(([nomor, namaLatin, arti, ayat, namaArab]) => ({ nomor, namaLatin, arti, ayat, namaArab })),
                 pilihSurah: '',
                 pilihAyat: 1,
                 lastRead: null,
                 prevRead: null,
+                tab: 'surah',
+
+                TABS: [
+                    { id: 'surah',   label: 'Surah' },
+                    { id: 'halaman', label: 'Halaman' },
+                    { id: 'juz',     label: 'Juz' },
+                    { id: 'hizb',    label: 'Hizb' },
+                    { id: 'ruku',    label: 'Ruku' },
+                ],
+
+                AKSES_CEPAT: [
+                    { label: 'Al-Mulk',     href: 'read.html?surah=67' },
+                    { label: 'Al-Kahfi',    href: 'read.html?surah=18' },
+                    { label: 'Ayat Kursi',  href: 'read.html?surah=2&ayat=255' },
+                    { label: 'Yasin',       href: 'read.html?surah=36' },
+                    { label: 'Ar-Rahman',   href: 'read.html?surah=55' },
+                ],
 
                 init() {
                     try {
@@ -236,6 +375,45 @@
                 namaSurah(nomor) {
                     const s = this.surahList.find(x => x.nomor === Number(nomor));
                     return s ? s.namaLatin : 'Surah ' + nomor;
+                },
+
+                get HALAMAN() {
+                    return Array.from({ length: 606 }, (_, i) => i + 1);
+                },
+
+                get JUZ() {
+                    return JUZ_HALAMAN.map((halaman, i) => ({ n: i + 1, halaman }));
+                },
+
+                get HIZB() {
+                    // Setiap juz = 2 hizb; hizb ganjil mulai di awal juz,
+                    // hizb genap di tengah juz (±7 halaman berikutnya).
+                    const out = [];
+                    JUZ_HALAMAN.forEach((halaman, i) => {
+                        const juz = i + 1;
+                        const akhir = (i < 29 ? JUZ_HALAMAN[i + 1] : 607) - 1;
+                        out.push({ n: juz * 2 - 1, juz, halaman });
+                        out.push({ n: juz * 2, juz, halaman: Math.min(halaman + 7, akhir) });
+                    });
+                    return out;
+                },
+
+                get RUKU() {
+                    const out = [];
+                    for (const s of this.surahList) {
+                        const ends = RUKU_ENDS[s.nomor] || [];
+                        let start = 1;
+                        ends.forEach((e, i) => {
+                            out.push({ surah: s.nomor, ruku: i + 1, ayatAwal: start, ayatAkhir: e });
+                            start = e + 1;
+                        });
+                    }
+                    return out;
+                },
+
+                namaArti(nomor) {
+                    const s = this.surahList.find(x => x.nomor === Number(nomor));
+                    return s ? s.arti : '';
                 },
 
                 goToAyat() {
