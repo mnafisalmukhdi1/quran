@@ -3,342 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al-Quran Al-Karim</title>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <title>Al-Qur'an</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
-        .surah-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .surah-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-        }
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            max-height: 80vh;
-            overflow-y: auto;
-            width: 90%;
-            max-width: 500px;
-        }
-        .modal-header {
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-            font-weight: bold;
-        }
-        .modal-body {
-            padding: 1rem;
-        }
-        .modal-item {
-            padding: 0.75rem;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .modal-item:last-child {
-            border-bottom: none;
-        }
-        .modal-item:hover {
-            background-color: #f8f9fa;
-        }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen" x-data="appData()">
-    <!-- Header -->
-    <header class="bg-green-700 text-white py-6 shadow-md">
-        <div class="container mx-auto px-4 text-center">
-            <h1 class="text-3xl font-bold">Al-Quran Al-Karim</h1>
+<body class="bg-neutral-50 text-neutral-900 min-h-screen" x-data="beranda()" x-cloak>
+
+    <!-- ===== Header ===== -->
+    <header class="sticky top-0 z-40 bg-emerald-800 text-white shadow">
+        <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+            <!-- Tombol menu (sidebar) -->
+            <button @click="sidebar = true" aria-label="Buka menu"
+                    class="rounded-full p-2 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            <h1 class="text-lg font-semibold tracking-wide">Al-Qur'an</h1>
+
+            <!-- Tombol pencarian -->
+            <button @click="cari = true" aria-label="Cari"
+                    class="rounded-full p-2 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                </svg>
+            </button>
         </div>
     </header>
 
-    <!-- Quick Access Buttons -->
-    <div class="container mx-auto px-4 mt-6">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <button @click="openModal('surah')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow">
-                <i class="fas fa-book-open mr-2"></i>Surah
-            </button>
-            <button @click="openModal('juz')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg shadow">
-                <i class="fas fa-layer-group mr-2"></i>Juz
-            </button>
-            <button @click="openModal('page')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg shadow">
-                <i class="fas fa-file-alt mr-2"></i>Page
-            </button>
-            <button @click="openModal('hizib')" class="bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-lg shadow">
-                <i class="fas fa-list mr-2"></i>Hizib
-            </button>
-            <button @click="openModal('ruku')" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg shadow">
-                <i class="fas fa-step-forward mr-2"></i>Ruku
-            </button>
-        </div>
-
-        <!-- Favorite Surahs -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Surah Pilihan</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                <button @click="goToSurah(18)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
-                    Al-Kahfi
-                </button>
-                <button @click="goToSurah(36)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
-                    Yasin
-                </button>
-                <button @click="goToSurah(55)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
-                    Ar-Rahman
-                </button>
-                <button @click="goToSurah(56)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
-                    Al-Waqiah
-                </button>
-                <button @click="goToSurah(67)" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg shadow">
-                    Al-Mulk
+    <!-- ===== Sidebar ===== -->
+    <div class="fixed inset-0 z-50" x-show="sidebar" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/50" @click="sidebar = false"></div>
+        <aside class="absolute left-0 top-0 h-full w-72 max-w-[80%] bg-white shadow-xl p-4"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="-translate-x-full"
+               x-transition:enter-end="translate-x-0"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="translate-x-0"
+               x-transition:leave-end="-translate-x-full">
+            <div class="mb-4 flex items-center justify-between">
+                <span class="text-lg font-bold text-emerald-800">Menu</span>
+                <button @click="sidebar = false" aria-label="Tutup menu" class="rounded-full p-1 hover:bg-neutral-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
-        </div>
+            <nav class="space-y-1">
+                <a href="#terakhir"   @click="sidebar = false" class="block rounded-lg px-3 py-2 hover:bg-emerald-50">Terakhir Dibaca</a>
+                <a href="#akses"      @click="sidebar = false" class="block rounded-lg px-3 py-2 hover:bg-emerald-50">Akses Ayat</a>
+                <a href="read.html?surah=1&ayat=1" class="block rounded-lg px-3 py-2 hover:bg-emerald-50">Mulai Baca</a>
+            </nav>
+        </aside>
+    </div>
 
-        <!-- Surah List -->
-        <div>
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Daftar Surah</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                <template x-for="surah in surahList" :key="surah.number">
-                    <div 
-                        class="surah-card bg-white rounded-lg shadow-md p-4 cursor-pointer hover:bg-green-50"
-                        @click="goToSurah(surah.number)"
-                    >
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-800 flex items-center justify-center mr-3 font-bold">
-                                <span x-text="surah.number"></span>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-arabic text-lg" dir="rtl" x-text="surah.name"></div>
-                                <div class="text-sm text-gray-600" x-text="surah.englishName + ' (' + surah.numberOfAyahs + ' Ayat)'"></div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
+    <!-- ===== Modal Pencarian ===== -->
+    <div class="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20" x-show="cari" x-transition.opacity>
+        <div class="absolute inset-0 bg-black/50" @click="cari = false"></div>
+        <div class="relative w-full max-w-md rounded-xl bg-white shadow-xl"
+             @keydown.escape.window="cari = false">
+            <div class="flex items-center gap-2 border-b border-neutral-200 px-4 py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                </svg>
+                <input x-model="q" type="search" placeholder="Cari surah…"
+                       class="w-full outline-none" autofocus>
             </div>
+            <ul class="max-h-72 overflow-y-auto py-2">
+                <template x-for="s in hasilCari" :key="s.nomor">
+                    <li>
+                        <a :href="'read.html?surah=' + s.nomor" class="flex items-center justify-between px-4 py-2 hover:bg-emerald-50">
+                            <span>
+                                <span class="font-medium" x-text="s.namaLatin"></span>
+                                <span class="text-sm text-neutral-500" x-text="' — ' + s.arti"></span>
+                            </span>
+                            <span class="text-sm text-neutral-400" x-text="s.ayat + ' ayat'"></span>
+                        </a>
+                    </li>
+                </template>
+                <li x-show="hasilCari.length === 0" class="px-4 py-6 text-center text-sm text-neutral-500">
+                    Tidak ada hasil.
+                </li>
+            </ul>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="surahModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Pilih Surah</div>
-            <div class="modal-body">
-                <template x-for="surah in surahList" :key="surah.number">
-                    <div class="modal-item" @click="selectSurah(surah.number); closeModal('surah')">
-                        <span x-text="surah.number"></span>. <span x-text="surah.englishName"></span> (<span x-text="surah.numberOfAyahs"></span> ayat)
-                    </div>
-                </template>
-            </div>
-        </div>
-    </div>
+    <main class="mx-auto max-w-3xl px-4 pb-12">
 
-    <div id="juzModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Pilih Juz</div>
-            <div class="modal-body">
-                <template x-for="i in 30" :key="i">
-                    <div class="modal-item" @click="goToJuz(i); closeModal('juz')">Juz <span x-text="i"></span></div>
-                </template>
+        <!-- ===== Terakhir Dibaca ===== -->
+        <section id="terakhir" class="mt-6">
+            <h2 class="mb-3 text-base font-semibold text-neutral-700">Terakhir Dibaca</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Slot 1 -->
+                <a x-show="lastRead" :href="lastRead ? 'read.html?surah=' + lastRead.surah + '&ayat=' + lastRead.ayat : '#'"
+                   class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                    <p class="text-sm font-semibold text-emerald-800" x-text="lastRead ? ('QS. ' + namaSurah(lastRead.surah)) : ''"></p>
+                    <p class="mt-1 text-xs text-neutral-500" x-text="lastRead ? (lastRead.surah + ':' + lastRead.ayat) : ''"></p>
+                </a>
+                <!-- Slot 2 -->
+                <a x-show="prevRead" :href="prevRead ? 'read.html?surah=' + prevRead.surah + '&ayat=' + prevRead.ayat : '#'"
+                   class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                    <p class="text-sm font-semibold text-emerald-800" x-text="prevRead ? ('QS. ' + namaSurah(prevRead.surah)) : ''"></p>
+                    <p class="mt-1 text-xs text-neutral-500" x-text="prevRead ? (prevRead.surah + ':' + prevRead.ayat) : ''"></p>
+                </a>
+                <!-- Placeholder jika belum ada riwayat -->
+                <div x-show="!lastRead" class="col-span-2 rounded-xl border border-dashed border-neutral-300 bg-white/50 p-4 text-center text-sm text-neutral-500">
+                    Belum ada riwayat bacaan. Mulai baca dari <a href="read.html?surah=1&ayat=1" class="text-emerald-700 underline">Al-Fatihah</a>.
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div id="pageModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Pilih Halaman</div>
-            <div class="modal-body">
-                <template x-for="i in 604" :key="i">
-                    <div class="modal-item" @click="goToPage(i); closeModal('page')">Halaman <span x-text="i"></span></div>
-                </template>
-            </div>
-        </div>
-    </div>
+        <!-- ===== Akses Ayat ===== -->
+        <section id="akses" class="mt-8">
+            <h2 class="mb-3 text-base font-semibold text-neutral-700">Akses Ayat</h2>
+            <form @submit.prevent="goToAyat()" class="flex items-end gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+                <div class="flex-1">
+                    <label for="sel-surah" class="mb-1 block text-xs font-medium text-neutral-500">Surah</label>
+                    <select id="sel-surah" x-model.number="pilihSurah"
+                            class="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none">
+                        <option value="" disabled>Pilih surah…</option>
+                        <template x-for="s in surahList" :key="s.nomor">
+                            <option :value="s.nomor" x-text="s.nomor + '. ' + s.namaLatin"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="w-24">
+                    <label for="inp-ayat" class="mb-1 block text-xs font-medium text-neutral-500">Ayat</label>
+                    <input id="inp-ayat" x-model.number="pilihAyat" type="number" min="1"
+                           :max="maxAyat"
+                           class="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none">
+                </div>
+                <button type="submit"
+                        class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-40"
+                        :disabled="!pilihSurah || !pilihAyat">
+                    Baca
+                </button>
+            </form>
+            <p class="mt-2 text-xs text-neutral-400">
+                Contoh format tautan: <code>read.html?surah=2&amp;ayat=255</code> (Al-Baqarah ayat 255).
+            </p>
+        </section>
 
-    <div id="hizibModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Pilih Hizib</div>
-            <div class="modal-body">
-                <template x-for="i in 60" :key="i">
-                    <div class="modal-item" @click="goToHizib(i); closeModal('hizib')">Hizib <span x-text="i"></span></div>
-                </template>
-            </div>
-        </div>
-    </div>
-
-    <div id="rukuModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Pilih Ruku</div>
-            <div class="modal-body">
-                <template x-for="i in 558" :key="i">
-                    <div class="modal-item" @click="goToRuku(i); closeModal('ruku')">Ruku <span x-text="i"></span></div>
-                </template>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <script>
-        function appData() {
+        // Daftar 114 surah: [nomor, namaLatin, arti, jumlahAyat]
+        const SURAH_DATA = [
+            [1,"Al-Fatihah","Pembukaan",7],[2,"Al-Baqarah","Sapi Betina",286],[3,"Ali 'Imran","Keluarga Imran",200],
+            [4,"An-Nisa","Wanita",176],[5,"Al-Ma'idah","Hidangan",120],[6,"Al-An'am","Binatang Ternak",165],
+            [7,"Al-A'raf","Tempat Tertinggi",206],[8,"Al-Anfal","Harta Rampasan Perang",75],[9,"At-Taubah","Pengampunan",129],
+            [10,"Yunus","Nabi Yunus",109],[11,"Hud","Nabi Hud",123],[12,"Yusuf","Nabi Yusuf",111],
+            [13,"Ar-Ra'd","Guruh",43],[14,"Ibrahim","Nabi Ibrahim",52],[15,"Al-Hijr","Gunung Hijr",99],
+            [16,"An-Nahl","Lebah",128],[17,"Al-Isra'","Perjalanan Malam",111],[18,"Al-Kahf","Gua",110],
+            [19,"Maryam","Maryam",98],[20,"Taha","Ta Ha",135],[21,"Al-Anbiya","Para Nabi",112],
+            [22,"Al-Hajj","Haji",78],[23,"Al-Mu'minun","Orang-orang Mukmin",118],[24,"An-Nur","Cahaya",64],
+            [25,"Al-Furqan","Pembeda",77],[26,"Asy-Syu'ara","Para Penyair",227],[27,"An-Naml","Semut",93],
+            [28,"Al-Qasas","Kisah-kisah",88],[29,"Al-'Ankabut","Laba-laba",69],[30,"Ar-Rum","Bangsa Romawi",60],
+            [31,"Luqman","Luqman",34],[32,"As-Sajdah","Sujud",30],[33,"Al-Ahzab","Golongan yang Bersekutu",73],
+            [34,"Saba'","Kaum Saba'",54],[35,"Fatir","Pencipta",45],[36,"Yasin","Yasin",83],
+            [37,"As-Saffat","Barisan-barisan",182],[38,"Sad","Ṣād",88],[39,"Az-Zumar","Rombongan",75],
+            [40,"Gafir","Yang Mengampuni",85],[41,"Fussilat","Yang Dijelaskan",54],[42,"Asy-Syura","Musyawarah",53],
+            [43,"Az-Zukhruf","Perhiasan",89],[44,"Ad-Dukhan","Kabut",59],[45,"Al-Jasiyah","Yang Berjongkok",37],
+            [46,"Al-Ahqaf","Bukit Pasir",35],[47,"Muhammad","Nabi Muhammad",38],[48,"Al-Fath","Kemenangan",29],
+            [49,"Al-Hujurat","Kamar-kamar",18],[50,"Qaf","Qāf",45],[51,"Adz-Dzariyat","Angin yang Menerbangkan",60],
+            [52,"Ath-Thur","Bukit Tursina",49],[53,"An-Najm","Bintang",62],[54,"Al-Qamar","Bulan",55],
+            [55,"Ar-Rahman","Yang Maha Pengasih",78],[56,"Al-Waqi'ah","Hari Kiamat",96],[57,"Al-Hadid","Besi",29],
+            [58,"Al-Mujadalah","Perempuan yang Mengajukan Gugatan",22],[59,"Al-Hasyr","Pengusiran",24],[60,"Al-Mumtahanah","Perempuan yang Diuji",13],
+            [61,"As-Saff","Barisan",14],[62,"Al-Jumu'ah","Hari Jumat",11],[63,"Al-Munafiqun","Orang-orang Munafik",11],
+            [64,"At-Tagabun","Hari Ditampakkan Kesalahan",18],[65,"Ath-Thalaq","Talak",12],[66,"At-Tahrim","Pengharaman",12],
+            [67,"Al-Mulk","Kerajaan",30],[68,"Al-Qalam","Pena",52],[69,"Al-Haqqah","Hari Berbuat Baik",52],
+            [70,"Al-Ma'arij","Tempat Naik",44],[71,"Nuh","Nabi Nuh",28],[72,"Al-Jinn","Jin",28],
+            [73,"Al-Muzzammil","Orang yang Berselimut",20],[74,"Al-Muddassir","Orang yang Berkemul",56],[75,"Al-Qiyamah","Hari Kiamat",40],
+            [76,"Al-Insan","Manusia",31],[77,"Al-Mursalat","Malaikat yang Diutus",50],[78,"An-Naba'","Berita Besar",40],
+            [79,"An-Nazi'at","Malaikat yang Mencabut",46],[80,'Abasa',"Muka Masam",42],[81,"At-Takwir","Gulundungnya Matahari",29],
+            [82,"Al-Infitar","Terbelahnya Langit",19],[83,"Al-Mutaffifin","Orang yang Curang",36],[84,"Al-Insyiqaq","Terbelahnya Langit",25],
+            [85,"Al-Buruj","Gugusan Bintang",22],[86,"Ath-Thariq","Yang Datang di Malam Hari",17],[87,"Al-A'la","Yang Paling Tinggi",19],
+            [88,"Al-Gasyiyah","Hari Pembalasan",26],[89,"Al-Fajr","Fajar",30],[90,"Al-Balad","Negeri",20],
+            [91,"Asy-Syams","Matahari",15],[92,"Al-Lail","Malam",21],[93,"Ad-Duha","Time After Sunrise",11],
+            [94,"Asy-Syarh","Kelapangan",8],[95,"At-Tin","Buah Tin",8],[96,"Al-'Alaq","Segumpal Darah",19],
+            [97,"Al-Qadr","Kemuliaan",5],[98,"Al-Bayyinah","Bukti Nyata",8],[99,"Az-Zalzalah","Kegoncangan",8],
+            [100,"Al-'Adiyat","Kuda Perang",11],[101,"Al-Qari'ah","Hari Kiamat",11],[102,"At-Takasur"," Bermegah-megahan",8],
+            [103,"Al-'Asr","Masa",3],[104,"Al-Humazah","Pengumpat",9],[105,"Al-Fil","Gajah",5],
+            [106,"Quraisy","Suku Quraisy",4],[107,"Al-Ma'un","Barang Berguna",7],[108,"Al-Kausar","Nikmat Berlimpah",3],
+            [109,"Al-Kafirun","Orang-orang Kafir",6],[110,"An-Nasr","Pertolongan",3],[111,"Al-Lahab","Gejolak Api",5],
+            [112,"Al-Ikhlas","Eksistensi Allah",4],[113,"Al-Falaq","Waktu Subuh",5],[114,"An-Nas","Manusia",6]
+        ];
+
+        function beranda() {
             return {
-                surahList: [
-                    { number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah', numberOfAyahs: 7 },
-                    { number: 2, name: 'البقرة', englishName: 'Al-Baqarah', numberOfAyahs: 286 },
-                    { number: 3, name: 'آل عمران', englishName: 'Ali \'Imran', numberOfAyahs: 200 },
-                    { number: 4, name: 'النساء', englishName: 'An-Nisa', numberOfAyahs: 176 },
-                    { number: 5, name: 'المائدة', englishName: 'Al-Ma\'idah', numberOfAyahs: 120 },
-                    { number: 6, name: 'الأنعام', englishName: 'Al-An\'am', numberOfAyahs: 165 },
-                    { number: 7, name: 'الأعراف', englishName: 'Al-A\'raf', numberOfAyahs: 206 },
-                    { number: 8, name: 'الأنفال', englishName: 'Al-Anfal', numberOfAyahs: 75 },
-                    { number: 9, name: 'التوبة', englishName: 'At-Tawbah', numberOfAyahs: 129 },
-                    { number: 10, name: 'يونس', englishName: 'Yunus', numberOfAyahs: 109 },
-                    { number: 11, name: 'هود', englishName: 'Hud', numberOfAyahs: 123 },
-                    { number: 12, name: 'يوسف', englishName: 'Yusuf', numberOfAyahs: 111 },
-                    { number: 13, name: 'الرعد', englishName: 'Ar-Ra\'d', numberOfAyahs: 43 },
-                    { number: 14, name: 'إبراهيم', englishName: 'Ibrahim', numberOfAyahs: 52 },
-                    { number: 15, name: 'الحجر', englishName: 'Al-Hijr', numberOfAyahs: 99 },
-                    { number: 16, name: 'النحل', englishName: 'An-Nahl', numberOfAyahs: 128 },
-                    { number: 17, name: 'الإسراء', englishName: 'Al-Isra', numberOfAyahs: 111 },
-                    { number: 18, name: 'الكهف', englishName: 'Al-Kahf', numberOfAyahs: 110 },
-                    { number: 19, name: 'مريم', englishName: 'Maryam', numberOfAyahs: 98 },
-                    { number: 20, name: 'طه', englishName: 'Taha', numberOfAyahs: 135 },
-                    { number: 21, name: 'الأنبياء', englishName: 'Al-Anbiya', numberOfAyahs: 112 },
-                    { number: 22, name: 'الحج', englishName: 'Al-Hajj', numberOfAyahs: 78 },
-                    { number: 23, name: 'المؤمنون', englishName: 'Al-Mu\'minun', numberOfAyahs: 118 },
-                    { number: 24, name: 'النور', englishName: 'An-Nur', numberOfAyahs: 64 },
-                    { number: 25, name: 'الفرقان', englishName: 'Al-Furqan', numberOfAyahs: 77 },
-                    { number: 26, name: 'الشعراء', englishName: 'Ash-Shu\'ara', numberOfAyahs: 227 },
-                    { number: 27, name: 'النمل', englishName: 'An-Naml', numberOfAyahs: 93 },
-                    { number: 28, name: 'القصص', englishName: 'Al-Qasas', numberOfAyahs: 88 },
-                    { number: 29, name: 'العنكبوت', englishName: 'Al-\'Ankabut', numberOfAyahs: 69 },
-                    { number: 30, name: 'الروم', englishName: 'Ar-Rum', numberOfAyahs: 60 },
-                    { number: 31, name: 'لقمان', englishName: 'Luqman', numberOfAyahs: 34 },
-                    { number: 32, name: 'السجدة', englishName: 'As-Sajdah', numberOfAyahs: 30 },
-                    { number: 33, name: 'الأحزاب', englishName: 'Al-Ahzab', numberOfAyahs: 73 },
-                    { number: 34, name: 'سبإ', englishName: 'Saba', numberOfAyahs: 54 },
-                    { number: 35, name: 'فاطر', englishName: 'Fatir', numberOfAyahs: 45 },
-                    { number: 36, name: 'يس', englishName: 'Ya-Sin', numberOfAyahs: 83 },
-                    { number: 37, name: 'الصافات', englishName: 'As-Saffat', numberOfAyahs: 182 },
-                    { number: 38, name: 'ص', englishName: 'Sad', numberOfAyahs: 88 },
-                    { number: 39, name: 'الزمر', englishName: 'Az-Zumar', numberOfAyahs: 75 },
-                    { number: 40, name: 'غافر', englishName: 'Ghafir', numberOfAyahs: 85 },
-                    { number: 41, name: 'فصلت', englishName: 'Fussilat', numberOfAyahs: 54 },
-                    { number: 42, name: 'الشورى', englishName: 'Ash-Shura', numberOfAyahs: 53 },
-                    { number: 43, name: 'الزخرف', englishName: 'Az-Zukhruf', numberOfAyahs: 89 },
-                    { number: 44, name: 'الدخان', englishName: 'Ad-Dukhan', numberOfAyahs: 59 },
-                    { number: 45, name: 'الجاثية', englishName: 'Al-Jathiyah', numberOfAyahs: 37 },
-                    { number: 46, name: 'الأحقاف', englishName: 'Al-Ahqaf', numberOfAyahs: 35 },
-                    { number: 47, name: 'محمد', englishName: 'Muhammad', numberOfAyahs: 38 },
-                    { number: 48, name: 'الفتح', englishName: 'Al-Fath', numberOfAyahs: 29 },
-                    { number: 49, name: 'الحجرات', englishName: 'Al-Hujurat', numberOfAyahs: 18 },
-                    { number: 50, name: 'ق', englishName: 'Qaf', numberOfAyahs: 45 },
-                    { number: 51, name: 'الذاريات', englishName: 'Adh-Dhariyat', numberOfAyahs: 60 },
-                    { number: 52, name: 'الطور', englishName: 'At-Tur', numberOfAyahs: 49 },
-                    { number: 53, name: 'النجم', englishName: 'An-Najm', numberOfAyahs: 62 },
-                    { number: 54, name: 'القمر', englishName: 'Al-Qamar', numberOfAyahs: 55 },
-                    { number: 55, name: 'الرحمن', englishName: 'Ar-Rahman', numberOfAyahs: 78 },
-                    { number: 56, name: 'الواقعة', englishName: 'Al-Waqi\'ah', numberOfAyahs: 96 },
-                    { number: 57, name: 'الحديد', englishName: 'Al-Hadid', numberOfAyahs: 29 },
-                    { number: 58, name: 'المجادلة', englishName: 'Al-Mujadila', numberOfAyahs: 22 },
-                    { number: 59, name: 'الحشر', englishName: 'Al-Hashr', numberOfAyahs: 24 },
-                    { number: 60, name: 'الممتحنة', englishName: 'Al-Mumtahinah', numberOfAyahs: 13 },
-                    { number: 61, name: 'الصف', englishName: 'As-Saff', numberOfAyahs: 14 },
-                    { number: 62, name: 'الجمعة', englishName: 'Al-Jumu\'ah', numberOfAyahs: 11 },
-                    { number: 63, name: 'المنافقون', englishName: 'Al-Munafiqun', numberOfAyahs: 11 },
-                    { number: 64, name: 'التغابن', englishName: 'At-Taghabun', numberOfAyahs: 18 },
-                    { number: 65, name: 'الطلاق', englishName: 'At-Talaq', numberOfAyahs: 12 },
-                    { number: 66, name: 'التحريم', englishName: 'At-Tahrim', numberOfAyahs: 12 },
-                    { number: 67, name: 'الملك', englishName: 'Al-Mulk', numberOfAyahs: 30 },
-                    { number: 68, name: 'القلم', englishName: 'Al-Qalam', numberOfAyahs: 52 },
-                    { number: 69, name: 'الحاقة', englishName: 'Al-Haaqqah', numberOfAyahs: 52 },
-                    { number: 70, name: 'المعارج', englishName: 'Al-Ma\'arij', numberOfAyahs: 44 },
-                    { number: 71, name: 'نوح', englishName: 'Nuh', numberOfAyahs: 28 },
-                    { number: 72, name: 'الجن', englishName: 'Al-Jinn', numberOfAyahs: 28 },
-                    { number: 73, name: 'المزمل', englishName: 'Al-Muzzammil', numberOfAyahs: 20 },
-                    { number: 74, name: 'المدثر', englishName: 'Al-Muddaththir', numberOfAyahs: 56 },
-                    { number: 75, name: 'القيامة', englishName: 'Al-Qiyamah', numberOfAyahs: 40 },
-                    { number: 76, name: 'الإنسان', englishName: 'Al-Insan', numberOfAyahs: 31 },
-                    { number: 77, name: 'المرسلات', englishName: 'Al-Mursalat', numberOfAyahs: 50 },
-                    { number: 78, name: 'النبإ', englishName: 'An-Naba', numberOfAyahs: 40 },
-                    { number: 79, name: 'النازعات', englishName: 'An-Nazi\'at', numberOfAyahs: 46 },
-                    { number: 80, name: 'عبس', englishName: 'Abasa', numberOfAyahs: 42 },
-                    { number: 81, name: 'التكوير', englishName: 'At-Takwir', numberOfAyahs: 29 },
-                    { number: 82, name: 'الإنفطار', englishName: 'Al-Infitar', numberOfAyahs: 19 },
-                    { number: 83, name: 'المطففين', englishName: 'Al-Mutaffifin', numberOfAyahs: 36 },
-                    { number: 84, name: 'الإنشقاق', englishName: 'Al-Inshiqaq', numberOfAyahs: 25 },
-                    { number: 85, name: 'البروج', englishName: 'Al-Buruj', numberOfAyahs: 22 },
-                    { number: 86, name: 'الطارق', englishName: 'At-Tariq', numberOfAyahs: 17 },
-                    { number: 87, name: 'الأعلى', englishName: 'Al-A\'la', numberOfAyahs: 19 },
-                    { number: 88, name: 'الغاشية', englishName: 'Al-Ghashiyah', numberOfAyahs: 26 },
-                    { number: 89, name: 'الفجر', englishName: 'Al-Fajr', numberOfAyahs: 30 },
-                    { number: 90, name: 'البلد', englishName: 'Al-Balad', numberOfAyahs: 20 },
-                    { number: 91, name: 'الشمس', englishName: 'Ash-Shams', numberOfAyahs: 15 },
-                    { number: 92, name: 'الليل', englishName: 'Al-Lail', numberOfAyahs: 21 },
-                    { number: 93, name: 'الضحى', englishName: 'Ad-Duha', numberOfAyahs: 11 },
-                    { number: 94, name: 'الشرح', englishName: 'Ash-Sharh', numberOfAyahs: 8 },
-                    { number: 95, name: 'التين', englishName: 'At-Tin', numberOfAyahs: 8 },
-                    { number: 96, name: 'العلق', englishName: 'Al-\'Alaq', numberOfAyahs: 19 },
-                    { number: 97, name: 'القدر', englishName: 'Al-Qadr', numberOfAyahs: 5 },
-                    { number: 98, name: 'البينة', englishName: 'Al-Bayyinah', numberOfAyahs: 8 },
-                    { number: 99, name: 'الزلزلة', englishName: 'Az-Zalzalah', numberOfAyahs: 8 },
-                    { number: 100, name: 'العاديات', englishName: 'Al-\'Adiyat', numberOfAyahs: 11 },
-                    { number: 101, name: 'القارعة', englishName: 'Al-Qari\'ah', numberOfAyahs: 11 },
-                    { number: 102, name: 'التكاثر', englishName: 'At-Takathur', numberOfAyahs: 8 },
-                    { number: 103, name: 'العصر', englishName: 'Al-\'Asr', numberOfAyahs: 3 },
-                    { number: 104, name: 'الهمزة', englishName: 'Al-Humazah', numberOfAyahs: 9 },
-                    { number: 105, name: 'الفيل', englishName: 'Al-Fil', numberOfAyahs: 5 },
-                    { number: 106, name: 'قريش', englishName: 'Quraysh', numberOfAyahs: 4 },
-                    { number: 107, name: 'الماعون', englishName: 'Al-Ma\'un', numberOfAyahs: 7 },
-                    { number: 108, name: 'الكوثر', englishName: 'Al-Kawthar', numberOfAyahs: 3 },
-                    { number: 109, name: 'الكافرون', englishName: 'Al-Kafirun', numberOfAyahs: 6 },
-                    { number: 110, name: 'النصر', englishName: 'An-Nasr', numberOfAyahs: 3 },
-                    { number: 111, name: 'المسد', englishName: 'Al-Masad', numberOfAyahs: 5 },
-                    { number: 112, name: 'الإخلاص', englishName: 'Al-Ikhlas', numberOfAyahs: 4 },
-                    { number: 113, name: 'الفلق', englishName: 'Al-Falaq', numberOfAyahs: 5 },
-                    { number: 114, name: 'الناس', englishName: 'An-Nas', numberOfAyahs: 6 }
-                ],
-                openModal(type) {
-                    document.getElementById(`${type}Modal`).classList.add('active');
+                sidebar: false,
+                cari: false,
+                q: '',
+                surahList: SURAH_DATA.map(([nomor, namaLatin, arti, ayat]) => ({ nomor, namaLatin, arti, ayat })),
+                pilihSurah: '',
+                pilihAyat: 1,
+                lastRead: null,
+                prevRead: null,
+
+                init() {
+                    try {
+                        const raw = localStorage.getItem('lastRead');
+                        if (raw) {
+                            const data = JSON.parse(raw);
+                            // data dapat berupa array riwayat atau objek tunggal
+                            if (Array.isArray(data)) {
+                                this.lastRead = data[0] || null;
+                                this.prevRead = data[1] || null;
+                            } else {
+                                this.lastRead = data;
+                            }
+                        }
+                    } catch (e) { /* abaikan riwayat rusak */ }
                 },
-                closeModal(type) {
-                    document.getElementById(`${type}Modal`).classList.remove('active');
+
+                get maxAyat() {
+                    const s = this.surahList.find(x => x.nomor === Number(this.pilihSurah));
+                    return s ? s.ayat : 6236;
                 },
-                goToSurah(number) {
-                    window.location.href = `read.html?surah=${number}`;
+
+                get hasilCari() {
+                    const k = this.q.trim().toLowerCase();
+                    if (!k) return this.surahList.slice(0, 10);
+                    return this.surahList.filter(s =>
+                        s.namaLatin.toLowerCase().includes(k) || s.arti.toLowerCase().includes(k)
+                    );
                 },
-                goToJuz(juz) {
-                    // Implementasi untuk navigasi ke juz
-                    alert(`Navigasi ke Juz ${juz}`);
+
+                namaSurah(nomor) {
+                    const s = this.surahList.find(x => x.nomor === Number(nomor));
+                    return s ? s.namaLatin : 'Surah ' + nomor;
                 },
-                goToPage(page) {
-                    // Implementasi untuk navigasi ke halaman
-                    alert(`Navigasi ke Halaman ${page}`);
-                },
-                goToHizib(hizib) {
-                    // Implementasi untuk navigasi ke hizib
-                    alert(`Navigasi ke Hizib ${hizib}`);
-                },
-                goToRuku(ruku) {
-                    // Implementasi untuk navigasi ke ruku
-                    alert(`Navigasi ke Ruku ${ruku}`);
-                },
-                selectSurah(number) {
-                    this.goToSurah(number);
+
+                goToAyat() {
+                    const n = Number(this.pilihSurah), a = Number(this.pilihAyat);
+                    if (!n || !a) return;
+                    window.location.href = 'read.html?surah=' + n + '&ayat=' + Math.max(1, a);
                 }
-            }
+            };
         }
     </script>
 </body>
