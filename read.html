@@ -73,6 +73,19 @@
       return String(number).replace(/\d/g, digit => digits[digit]);
     }
 
+    function getAyahText(ayah) {
+      if (ayah.surah.number === 1 || ayah.numberInSurah !== 1) return ayah.text;
+
+      const prefix = ayah.text.match(/^\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*/u);
+      if (!prefix) return ayah.text;
+      const words = prefix.slice(1).map(word =>
+        word.normalize('NFD').replace(/\p{M}/gu, '').replace(/ٱ/g, 'ا')
+      );
+      return words.join(' ') === 'بسم الله الرحمن الرحيم'
+        ? ayah.text.slice(prefix[0].length)
+        : ayah.text;
+    }
+
     function appendSurahStart(content, ayah) {
       if (ayah.numberInSurah !== 1 || ayah.surah.number === 1) return;
 
@@ -102,7 +115,7 @@
           const arabic = document.createElement('p');
           arabic.className = 'text-right text-2xl leading-[2.2] sm:text-3xl';
           arabic.dir = 'rtl';
-          arabic.textContent = `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
+          arabic.textContent = `${getAyahText(ayah)} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
           item.append(arabic);
 
           if (showTranslation) {
@@ -125,7 +138,7 @@
             content.append(ayahLine);
             currentSurah = ayah.surah.number;
           }
-          const verse = `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
+          const verse = `${getAyahText(ayah)} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
           ayahLine.append(document.createTextNode(`${ayahLine.textContent ? ' ' : ''}${verse}`));
         });
       }

@@ -209,7 +209,7 @@
             </div>
 
             <!-- List default: Surah -->
-            <ul x-show="tab === 'surah'" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <ul x-show="tab === 'surah'" class="block space-y-2 sm:grid sm:grid-cols-3 sm:gap-2 sm:space-y-0">
                 <template x-for="s in surahList" :key="s.nomor">
                     <li>
                         <a :href="'read.html?page=' + halamanSurah(s.nomor)"
