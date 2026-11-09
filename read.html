@@ -10,23 +10,32 @@
   <style>
     body { font-family: 'Amiri', serif; }
     #quran-page { touch-action: pan-y; }
+    #quran-page.ayah-list { min-height: 0; }
   </style>
 </head>
 <body class="min-h-screen bg-neutral-100 px-3 py-4 sm:px-6 sm:py-8">
   <main class="mx-auto w-full max-w-3xl">
-    <header class="mb-3 flex items-center justify-between gap-3 border-b border-neutral-300 pb-3 text-neutral-700">
-      <a href="index.html" class="flex items-center gap-1 text-sm font-medium hover:text-emerald-800" dir="ltr">
-        <span class="material-icons text-lg">arrow_back</span> Beranda
-      </a>
-      <div class="text-center">
-        <p id="surah-name" class="text-lg font-bold">سورة الفاتحة</p>
-        <p id="juz-name" class="text-sm text-neutral-500">الجزء ١</p>
+    <header class="mb-3 flex flex-col gap-3 border-b border-neutral-300 pb-3 text-neutral-700">
+      <div class="flex items-center justify-between gap-3">
+        <a href="index.html" class="flex items-center gap-1 text-sm font-medium hover:text-emerald-800" dir="ltr">
+          <span class="material-icons text-lg">arrow_back</span> Beranda
+        </a>
+        <div class="text-center">
+          <p id="surah-name" class="text-lg font-bold">سورة الفاتحة</p>
+          <p id="juz-name" class="text-sm text-neutral-500">الجزء ١</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm" dir="ltr">
+          <span>Halaman</span>
+          <input id="page-input" type="number" min="1" max="604" value="1" aria-label="Nomor halaman"
+                 class="w-16 rounded border border-neutral-300 bg-white px-2 py-1 text-center">
+        </label>
       </div>
-      <label class="flex items-center gap-2 text-sm" dir="ltr">
-        <span>Halaman</span>
-        <input id="page-input" type="number" min="1" max="604" value="1" aria-label="Nomor halaman"
-               class="w-16 rounded border border-neutral-300 bg-white px-2 py-1 text-center">
-      </label>
+      <div class="flex justify-center" dir="ltr">
+        <div class="inline-flex rounded-lg bg-neutral-200 p-1" role="group" aria-label="Mode tampilan">
+          <button id="page-view" type="button" aria-pressed="true" class="rounded-md bg-white px-4 py-1.5 text-sm font-medium text-neutral-800 shadow">Halaman</button>
+          <button id="ayah-view" type="button" aria-pressed="false" class="rounded-md px-4 py-1.5 text-sm font-medium text-neutral-600">Ayat</button>
+        </div>
+      </div>
     </header>
 
     <section class="overflow-hidden border-y-2 border-emerald-800 bg-white px-5 py-8 shadow-sm sm:px-10" aria-label="Halaman mushaf">
@@ -56,10 +65,99 @@
     let currentPage = 1;
     let requestId = 0;
     let touchStart = null;
+    let currentView = 'page';
+    let showTranslation = false;
 
     function toArabicNumber(number) {
       const digits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
       return String(number).replace(/\d/g, digit => digits[digit]);
+    }
+
+    function appendSurahStart(content, ayah) {
+      if (ayah.numberInSurah !== 1 || ayah.surah.number === 1) return;
+
+      const title = document.createElement('p');
+      const name = ayah.surah.name.replace(/^سورة\s*|^سُورَةُ?\s*/u, '');
+      title.className = 'my-5 text-center text-xl font-bold sm:text-2xl';
+      title.textContent = `سُورَةُ ${name}`;
+      content.append(title);
+
+      if (ayah.surah.number !== 9) {
+        const basmalah = document.createElement('p');
+        basmalah.className = 'mb-3 text-center';
+        basmalah.textContent = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+        content.append(basmalah);
+      }
+    }
+
+    function renderPage(ayahs, translationAyahs = []) {
+      const content = document.createDocumentFragment();
+      if (currentView === 'ayah') {
+        const translations = new Map(translationAyahs.map(ayah => [ayah.number, ayah.text]));
+        ayahs.forEach(ayah => {
+          appendSurahStart(content, ayah);
+          const item = document.createElement('article');
+          item.className = 'border-b border-neutral-200 py-4 last:border-b-0';
+
+          const arabic = document.createElement('p');
+          arabic.className = 'text-right text-2xl leading-[2.2] sm:text-3xl';
+          arabic.dir = 'rtl';
+          arabic.textContent = `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
+          item.append(arabic);
+
+          if (showTranslation) {
+            const translation = document.createElement('p');
+            translation.className = 'mt-2 font-sans text-left text-base leading-7 text-neutral-600';
+            translation.dir = 'ltr';
+            translation.textContent = translations.get(ayah.number) || 'Terjemahan tidak tersedia.';
+            item.append(translation);
+          }
+          content.append(item);
+        });
+      } else {
+        let ayahLine = null;
+        let currentSurah = null;
+        ayahs.forEach(ayah => {
+          appendSurahStart(content, ayah);
+          if (ayah.surah.number !== currentSurah) {
+            ayahLine = document.createElement('p');
+            ayahLine.className = 'text-justify';
+            content.append(ayahLine);
+            currentSurah = ayah.surah.number;
+          }
+          const verse = `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`;
+          ayahLine.append(document.createTextNode(`${ayahLine.textContent ? ' ' : ''}${verse}`));
+        });
+      }
+
+      pageContent.replaceChildren(content);
+    }
+
+    function updateViewControls() {
+      const pageView = document.getElementById('page-view');
+      const ayahView = document.getElementById('ayah-view');
+      pageView.setAttribute('aria-pressed', String(currentView === 'page'));
+      ayahView.setAttribute('aria-pressed', String(currentView === 'ayah'));
+      pageView.classList.toggle('bg-white', currentView === 'page');
+      pageView.classList.toggle('text-neutral-800', currentView === 'page');
+      pageView.classList.toggle('text-neutral-600', currentView !== 'page');
+      pageView.classList.toggle('shadow', currentView === 'page');
+      ayahView.classList.toggle('bg-white', currentView === 'ayah');
+      ayahView.classList.toggle('text-neutral-800', currentView === 'ayah');
+      ayahView.classList.toggle('text-neutral-600', currentView !== 'ayah');
+      ayahView.classList.toggle('shadow', currentView === 'ayah');
+      pageContent.classList.toggle('ayah-list', currentView === 'ayah');
+    }
+
+    function setView(view) {
+      currentView = view;
+      try {
+        localStorage.setItem('readerView', view);
+      } catch (error) {
+        console.error(error);
+      }
+      updateViewControls();
+      loadPage(currentPage, true);
     }
 
     function rememberPosition(ayahs, page) {
@@ -80,13 +178,21 @@
       const thisRequest = ++requestId;
       status.textContent = 'Memuat halaman…';
       try {
-        const response = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
+        const translationRequest = currentView === 'ayah' && showTranslation
+          ? fetch(`https://api.alquran.cloud/v1/page/${page}/id.indonesian`)
+              .then(response => response.ok ? response.json() : null)
+              .catch(() => null)
+          : Promise.resolve(null);
+        const [response, translationResult] = await Promise.all([
+          fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`),
+          translationRequest
+        ]);
         const result = await response.json();
         const ayahs = result.data?.ayahs;
         if (!response.ok || !ayahs?.length) throw new Error('Halaman tidak dapat dimuat.');
         if (thisRequest !== requestId) return;
 
-        pageContent.textContent = ayahs.map(ayah => `${ayah.text} ﴿${toArabicNumber(ayah.numberInSurah)}﴾`).join(' ');
+        renderPage(ayahs, translationResult?.data?.ayahs || []);
         currentPage = page;
         pageNumber.textContent = page;
         pageInput.value = page;
@@ -104,6 +210,14 @@
     }
 
     async function initializeReader() {
+      try {
+        currentView = localStorage.getItem('readerView') === 'ayah' ? 'ayah' : 'page';
+        showTranslation = localStorage.getItem('showTranslation') === 'true';
+      } catch (error) {
+        console.error(error);
+      }
+      updateViewControls();
+
       const params = new URLSearchParams(location.search);
       let page = Number.parseInt(params.get('page'), 10);
       if (!Number.isInteger(page) && params.has('surah')) {
@@ -124,6 +238,8 @@
 
     document.getElementById('previous-page').addEventListener('click', () => loadPage(currentPage - 1));
     document.getElementById('next-page').addEventListener('click', () => loadPage(currentPage + 1));
+    document.getElementById('page-view').addEventListener('click', () => setView('page'));
+    document.getElementById('ayah-view').addEventListener('click', () => setView('ayah'));
     pageInput.addEventListener('change', () => loadPage(pageInput.value));
     window.addEventListener('popstate', event => {
       const page = event.state?.page || Number.parseInt(new URLSearchParams(location.search).get('page'), 10) || 1;
